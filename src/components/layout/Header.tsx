@@ -50,12 +50,12 @@ export const Header: React.FC = () => {
         </div>
         <div>
           <div className="flex items-center gap-2">
-            <span className="font-bold text-lg text-white tracking-tight">IntervAI</span>
+            <span className="font-bold text-lg text-white tracking-tight">Prepmate</span>
             <span className="text-[10px] font-semibold tracking-wider uppercase px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20">
-              Studio
+              AI
             </span>
           </div>
-          <p className="text-xs text-gray-400">AI Interview Simulator</p>
+          <p className="text-xs text-gray-400">Desktop Interview Studio</p>
         </div>
       </div>
 

@@ -1,8 +1,8 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
-  "productName": "intervai-studio",
+  "productName": "Prepmate AI",
   "version": "0.1.0",
-  "identifier": "com.tauri.dev",
+  "identifier": "com.prepmate.ai",
   "build": {
     "frontendDist": "../dist",
     "devUrl": "http://localhost:5173",
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "IntervAI Studio - AI Interview Preparation",
+        "title": "Prepmate AI - Desktop Interview Preparation Studio",
         "width": 1320,
         "height": 860,
         "minWidth": 1080,

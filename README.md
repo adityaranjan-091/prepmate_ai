@@ -1,6 +1,6 @@
-# IntervAI Studio 🎙️💻👁️
+# Prepmate AI 🎙️💻👁️
 
-**IntervAI Studio** is a high-performance desktop application for AI-powered mock interview preparation built with **Tauri 2.0 (Rust)**, **React 19**, **TypeScript**, and **Tailwind CSS**.
+**Prepmate AI** is a high-performance desktop application for AI-powered mock interview preparation built with **Tauri 2.0 (Rust)**, **React 19**, **TypeScript**, and **Tailwind CSS**.
 
 It simulates high-stakes technical, behavioral, and system design interviews calibrated against the hiring bars of top tech companies (Google, Meta, Amazon, Apple, Netflix, Stripe, etc.).
 
@@ -29,7 +29,7 @@ It simulates high-stakes technical, behavioral, and system design interviews cal
 
 ### 5. ⚡ Hybrid AI Engine (Cloud + Local Fallback)
 - **Multi-Provider Support**: Choose between Google Gemini (Gemini 1.5 Flash / Pro, Gemini 2.0), OpenAI (GPT-4o, GPT-4o-mini), and Groq (Llama 3.3).
-- **Local Ollama Fallback**: Run 100% offline and private sessions with local models (`llama3.2`, `deepseek-r1`, `qwen2.5-coder`). If your cloud API key is missing or offline, IntervAI seamlessly routes to your local Ollama instance.
+- **Local Ollama Fallback**: Run 100% offline and private sessions with local models (`llama3.2`, `deepseek-r1`, `qwen2.5-coder`). If your cloud API key is missing or offline, Prepmate AI seamlessly routes to your local Ollama instance.
 
 ### 6. 📄 Resume & Job Description Tailoring
 - Upload your resume (`.txt`, `.md`, or paste) to automatically extract your tech stack, seniority, and key projects.

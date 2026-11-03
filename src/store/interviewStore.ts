@@ -66,8 +66,8 @@ interface InterviewState {
   aiService: AIService;
 }
 
-const SETTINGS_STORAGE_KEY = 'intervai_settings_v1';
-const SESSIONS_STORAGE_KEY = 'intervai_sessions_v1';
+const SETTINGS_STORAGE_KEY = 'prepmate_settings_v1';
+const SESSIONS_STORAGE_KEY = 'prepmate_sessions_v1';
 
 const loadSavedSettings = (): AppSettings => {
   try {
