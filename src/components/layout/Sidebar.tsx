@@ -48,11 +48,21 @@ export const Sidebar: React.FC = () => {
     },
   ];
 
+  // ---------- Presentation-only helpers (derived from existing state) ----------
+  const isSessionLive = currentSession?.status === 'in_progress';
+
   return (
-    <aside className="w-64 border-r border-gray-800 bg-gray-900/60 flex flex-col justify-between p-4 shrink-0">
-      <div className="space-y-6">
-        {/* Navigation list */}
-        <nav className="space-y-1.5">
+    <aside className="relative w-64 shrink-0 flex flex-col justify-between gap-4 p-4 border-r border-gray-800/80 bg-gradient-to-b from-gray-900/70 to-gray-950/80 select-none">
+      {/* Subtle right-edge accent */}
+      <div className="pointer-events-none absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-blue-500/20 to-transparent" />
+
+      {/* ───────────── Navigation ───────────── */}
+      <div className="flex-1 min-h-0 overflow-y-auto space-y-3 -mr-2 pr-2 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-gray-800 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-gray-700">
+        <p className="px-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-gray-600">
+          Workspace
+        </p>
+
+        <nav aria-label="Main navigation" className="space-y-1">
           {navItems
             .filter((item) => !item.hidden)
             .map((item) => {
@@ -62,20 +72,42 @@ export const Sidebar: React.FC = () => {
               return (
                 <button
                   key={item.id}
+                  type="button"
                   onClick={() => setActiveTab(item.id as any)}
-                  className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all ${
-                    isActive
-                      ? 'bg-blue-600/15 text-blue-400 border border-blue-500/30 shadow-sm shadow-blue-500/10'
-                      : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800/60 border border-transparent'
-                  }`}
+                  aria-current={isActive ? 'page' : undefined}
+                  title={item.label}
+                  className={`group relative w-full flex items-center justify-between gap-2 pl-2.5 pr-3 py-2 rounded-xl border text-sm font-medium transition-all duration-200 cursor-pointer active:scale-[0.99] focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/60 ${isActive
+                      ? 'bg-gradient-to-r from-blue-600/20 to-blue-600/5 text-blue-300 border-blue-500/30 shadow-sm shadow-blue-500/10'
+                      : 'text-gray-400 hover:text-gray-100 hover:bg-gray-800/60 border-transparent'
+                    }`}
                 >
-                  <div className="flex items-center gap-3">
-                    <Icon className={`w-4 h-4 ${isActive ? 'text-blue-400' : 'text-gray-400'}`} />
-                    <span>{item.label}</span>
+                  {/* Active accent bar */}
+                  <span
+                    className={`absolute left-0 top-1/2 -translate-y-1/2 w-[3px] rounded-r-full bg-blue-400 shadow-[0_0_10px_rgba(96,165,250,0.7)] transition-all duration-200 ${isActive ? 'h-5 opacity-100' : 'h-0 opacity-0'
+                      }`}
+                  />
+
+                  <div className="flex items-center gap-3 min-w-0">
+                    <span
+                      className={`grid place-items-center w-8 h-8 shrink-0 rounded-lg border transition-colors duration-200 ${isActive
+                          ? 'bg-blue-500/15 border-blue-500/30'
+                          : 'bg-gray-800/60 border-gray-700/60 group-hover:bg-gray-800 group-hover:border-gray-600'
+                        }`}
+                    >
+                      <Icon
+                        className={`w-4 h-4 transition-colors ${isActive ? 'text-blue-400' : 'text-gray-400 group-hover:text-gray-200'
+                          }`}
+                      />
+                    </span>
+                    <span className="truncate">{item.label}</span>
                   </div>
 
                   {item.badge && (
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 border border-red-500/30 animate-pulse">
+                    <span className="shrink-0 inline-flex items-center gap-1.5 text-[10px] font-bold tracking-wider px-2 py-0.5 rounded-full bg-red-500/15 text-red-400 border border-red-500/30">
+                      <span className="relative flex w-1.5 h-1.5">
+                        <span className="absolute inline-flex w-full h-full rounded-full bg-red-400 opacity-75 animate-ping" />
+                        <span className="relative inline-flex w-1.5 h-1.5 rounded-full bg-red-500" />
+                      </span>
                       {item.badge}
                     </span>
                   )}
@@ -85,16 +117,45 @@ export const Sidebar: React.FC = () => {
         </nav>
       </div>
 
-      {/* Pro tip footer */}
-      <div className="p-3.5 rounded-xl bg-gradient-to-br from-indigo-950/40 via-purple-950/20 to-gray-900 border border-indigo-900/40 text-xs text-gray-300">
-        <div className="flex items-center gap-1.5 text-indigo-400 font-semibold mb-1">
-          <span>💡 Interview Tip</span>
+      {/* ───────────── Footer: Current session card ───────────── */}
+      {currentSession && (
+        <div className="shrink-0 rounded-xl border border-gray-800 bg-gray-900/70 p-3 shadow-inner shadow-black/20">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-gray-500">
+              Current Session
+            </span>
+            <span
+              className={`inline-flex items-center gap-1.5 text-[10px] font-medium ${isSessionLive ? 'text-emerald-400' : 'text-amber-400'
+                }`}
+            >
+              <span className="relative flex w-1.5 h-1.5">
+                {isSessionLive && (
+                  <span className="absolute inline-flex w-full h-full rounded-full bg-emerald-400 opacity-75 animate-ping" />
+                )}
+                <span
+                  className={`relative inline-flex w-1.5 h-1.5 rounded-full ${isSessionLive ? 'bg-emerald-500' : 'bg-amber-500'
+                    }`}
+                />
+              </span>
+              {isSessionLive ? 'In progress' : 'Paused'}
+            </span>
+          </div>
+
+          <p className="text-xs font-semibold text-gray-200 truncate" title={currentSession.config.targetRole}>
+            {currentSession.config.targetRole}
+          </p>
+          <p
+            className="mt-0.5 text-[11px] text-gray-500 truncate"
+            title={currentSession.config.targetCompany}
+          >
+            @ {currentSession.config.targetCompany}
+          </p>
+
+          <span className="mt-2.5 inline-block text-[10px] font-medium uppercase tracking-wider px-2 py-0.5 rounded-md bg-gray-800 border border-gray-700 text-gray-400">
+            {currentSession.config.mode.replace('_', ' ')}
+          </span>
         </div>
-        <p className="text-gray-400 leading-relaxed text-[11px]">
-          Use the <strong className="text-gray-200">STAR</strong> structure: Situation, Task, Action, and quantifiable Result for all behavioral questions.
-        </p>
-      </div>
+      )}
     </aside>
   );
 };
-

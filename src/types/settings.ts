@@ -34,11 +34,20 @@ export interface AppSettings {
 
 export const DEFAULT_SETTINGS: AppSettings = {
   activeProvider: 'gemini',
-  geminiApiKey: '',
+  geminiApiKey:
+    (typeof import.meta !== 'undefined' &&
+      (import.meta.env?.VITE_GEMINI_API_KEY || import.meta.env?.GEMINI_API_KEY)) ||
+    '',
   geminiModel: 'gemini-1.5-flash',
-  openaiApiKey: '',
+  openaiApiKey:
+    (typeof import.meta !== 'undefined' &&
+      (import.meta.env?.VITE_OPENAI_API_KEY || import.meta.env?.OPENAI_API_KEY)) ||
+    '',
   openaiModel: 'gpt-4o-mini',
-  groqApiKey: '',
+  groqApiKey:
+    (typeof import.meta !== 'undefined' &&
+      (import.meta.env?.VITE_GROQ_API_KEY || import.meta.env?.GROQ_API_KEY)) ||
+    '',
   groqModel: 'llama-3.3-70b-versatile',
   ollamaBaseUrl: 'http://localhost:11434',
   ollamaModel: 'llama3.2',

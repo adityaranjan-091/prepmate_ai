@@ -1,4 +1,4 @@
-import { InterviewConfig, ChatMessage, Scorecard, InterviewMode } from '../types/interview';
+import { InterviewConfig, ChatMessage, Scorecard, AIProvider } from '../types/interview';
 import { AppSettings } from '../types/settings';
 
 export interface StreamCallbacks {
@@ -90,45 +90,62 @@ CRITICAL CONVERSATIONAL GUIDELINES:
   ): Promise<void> {
     const systemPrompt = this.buildSystemPrompt(config);
 
+    // Determine the active provider from config or settings
+    const activeProvider = (config?.provider || this.settings.activeProvider || 'gemini') as AIProvider;
+    const targetModel = config?.model || (
+      activeProvider === 'gemini' ? this.settings.geminiModel :
+      activeProvider === 'openai' ? this.settings.openaiModel :
+      activeProvider === 'groq' ? this.settings.groqModel :
+      this.settings.ollamaModel
+    );
+
     // Format chat history
     const conversation = messages.map(m => ({
       role: m.role === 'interviewer' ? 'assistant' : m.role === 'candidate' ? 'user' : 'system',
       content: m.content,
     }));
 
-    if (currentCode) {
+    if (currentCode && currentCode.trim()) {
       conversation.push({
         role: 'user',
-        content: `[Current code in candidate's editor]:\n\`\`\`\n${currentCode}\n\`\`\``,
+        content: `[Current code in candidate's editor]:\n\`\`\`\n${currentCode.trim()}\n\`\`\``,
       });
     }
 
     try {
-      if (this.settings.activeProvider === 'gemini') {
-        await this.streamGemini(systemPrompt, conversation, callbacks);
-      } else if (this.settings.activeProvider === 'openai') {
+      if (activeProvider === 'gemini') {
+        await this.streamGemini(systemPrompt, conversation, callbacks, targetModel);
+      } else if (activeProvider === 'openai') {
         await this.streamOpenAI(systemPrompt, conversation, callbacks);
-      } else if (this.settings.activeProvider === 'groq') {
+      } else if (activeProvider === 'groq') {
         await this.streamGroq(systemPrompt, conversation, callbacks);
-      } else if (this.settings.activeProvider === 'ollama') {
+      } else if (activeProvider === 'ollama') {
         await this.streamOllama(systemPrompt, conversation, callbacks);
       } else {
-        throw new Error(`Unsupported AI provider: ${this.settings.activeProvider}`);
+        throw new Error(`Unsupported AI provider: ${activeProvider}`);
       }
     } catch (primaryError: any) {
-      console.warn(`Primary provider (${this.settings.activeProvider}) failed:`, primaryError);
+      console.warn(`Primary provider (${activeProvider}) failed:`, primaryError);
 
-      if (this.settings.enableLocalFallback && this.settings.activeProvider !== 'ollama') {
-        callbacks.onChunk('\n[Cloud API unavailable - Falling back to local Ollama model...]\n');
+      // Only attempt local Ollama fallback if enabled AND if primary was not already Ollama
+      if (this.settings.enableLocalFallback && activeProvider !== 'ollama') {
         try {
-          await this.streamOllama(systemPrompt, conversation, callbacks);
-          return;
-        } catch (fallbackError: any) {
-          callbacks.onError(new Error(`Primary failed (${primaryError.message}) and Local Ollama fallback also failed (${fallbackError.message}). Please check API keys or ensure Ollama is running.`));
-          return;
+          // Probe if Ollama is reachable within 1500ms before attempting
+          const ollamaCheck = await fetch(`${this.settings.ollamaBaseUrl || 'http://localhost:11434'}/api/tags`, {
+            signal: AbortSignal.timeout(1500),
+          }).catch(() => null);
+
+          if (ollamaCheck && ollamaCheck.ok) {
+            callbacks.onChunk('\n[Cloud API unavailable - Falling back to local Ollama model...]\n');
+            await this.streamOllama(systemPrompt, conversation, callbacks);
+            return;
+          }
+        } catch {
+          // Ollama not reachable, fall through to reporting the primary error cleanly
         }
       }
 
+      // Deliver the clear, actionable primary error to the caller
       callbacks.onError(primaryError);
     }
   }
@@ -248,130 +265,456 @@ Evaluate the candidate and return STRICTLY a valid JSON object matching this sch
     }
   }
 
+  // --- Key Resolution Helpers ---
+
+  public getGeminiApiKey(): string {
+    const fromSettings = this.settings.geminiApiKey?.trim();
+    if (fromSettings) return fromSettings;
+
+    // Check localStorage directly for latest saved key
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        const stored = localStorage.getItem('prepmate_settings_v1') || localStorage.getItem('intervai_settings_v1');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (parsed?.geminiApiKey?.trim()) return parsed.geminiApiKey.trim();
+        }
+      }
+    } catch {}
+
+    // Check Vite / environment variables
+    if (typeof import.meta !== 'undefined' && import.meta.env) {
+      const envKey = (import.meta.env.VITE_GEMINI_API_KEY || import.meta.env.GEMINI_API_KEY) as string | undefined;
+      if (envKey?.trim()) return envKey.trim();
+    }
+    return '';
+  }
+
+  public getOpenAIApiKey(): string {
+    const fromSettings = this.settings.openaiApiKey?.trim();
+    if (fromSettings) return fromSettings;
+
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        const stored = localStorage.getItem('prepmate_settings_v1') || localStorage.getItem('intervai_settings_v1');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (parsed?.openaiApiKey?.trim()) return parsed.openaiApiKey.trim();
+        }
+      }
+    } catch {}
+
+    if (typeof import.meta !== 'undefined' && import.meta.env) {
+      const envKey = (import.meta.env.VITE_OPENAI_API_KEY || import.meta.env.OPENAI_API_KEY) as string | undefined;
+      if (envKey?.trim()) return envKey.trim();
+    }
+    return '';
+  }
+
+  public getGroqApiKey(): string {
+    const fromSettings = this.settings.groqApiKey?.trim();
+    if (fromSettings) return fromSettings;
+
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        const stored = localStorage.getItem('prepmate_settings_v1') || localStorage.getItem('intervai_settings_v1');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (parsed?.groqApiKey?.trim()) return parsed.groqApiKey.trim();
+        }
+      }
+    } catch {}
+
+    if (typeof import.meta !== 'undefined' && import.meta.env) {
+      const envKey = (import.meta.env.VITE_GROQ_API_KEY || import.meta.env.GROQ_API_KEY) as string | undefined;
+      if (envKey?.trim()) return envKey.trim();
+    }
+    return '';
+  }
+
   // --- Provider Implementations ---
 
   private async generateText(prompt: string): Promise<string> {
-    if (this.settings.geminiApiKey) {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/${this.settings.geminiModel || 'gemini-1.5-flash'}:generateContent?key=${this.settings.geminiApiKey}`;
-      const res = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { responseMimeType: 'application/json' },
-        }),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        return data?.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
+    const geminiKey = this.getGeminiApiKey();
+    if (geminiKey) {
+      const baseModel = (this.settings.geminiModel || 'gemini-1.5-flash').trim().replace(/^models\//, '');
+      const modelsToTry = Array.from(new Set([baseModel, 'gemini-1.5-flash', 'gemini-2.0-flash', 'gemini-1.5-pro']));
+
+      for (const model of modelsToTry) {
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(geminiKey)}`;
+        try {
+          // Attempt 1: JSON schema mode
+          const res = await fetch(url, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-goog-api-key': geminiKey,
+            },
+            body: JSON.stringify({
+              contents: [{ role: 'user', parts: [{ text: prompt }] }],
+              generationConfig: {
+                temperature: 0.2,
+                responseMimeType: 'application/json',
+              },
+            }),
+          });
+
+          if (res.ok) {
+            const data = await res.json();
+            const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (text) return text;
+          }
+
+          // Attempt 2: Standard text mode without responseMimeType
+          const retryRes = await fetch(url, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-goog-api-key': geminiKey,
+            },
+            body: JSON.stringify({
+              contents: [{ role: 'user', parts: [{ text: prompt + '\nRespond strictly with valid JSON only.' }] }],
+              generationConfig: { temperature: 0.2 },
+            }),
+          });
+
+          if (retryRes.ok) {
+            const retryData = await retryRes.json();
+            const text = retryData?.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (text) return text;
+          }
+        } catch (err) {
+          console.warn(`Gemini model ${model} generateText error:`, err);
+        }
       }
     }
 
-    if (this.settings.openaiApiKey) {
-      const res = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${this.settings.openaiApiKey}`,
-        },
-        body: JSON.stringify({
-          model: this.settings.openaiModel || 'gpt-4o-mini',
-          messages: [{ role: 'user', content: prompt }],
-          response_format: { type: 'json_object' },
-        }),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        return data?.choices?.[0]?.message?.content || '{}';
+    const openAIKey = this.getOpenAIApiKey();
+    if (openAIKey) {
+      try {
+        const res = await fetch('https://api.openai.com/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${openAIKey}`,
+          },
+          body: JSON.stringify({
+            model: this.settings.openaiModel || 'gpt-4o-mini',
+            messages: [{ role: 'user', content: prompt }],
+            response_format: { type: 'json_object' },
+          }),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          return data?.choices?.[0]?.message?.content || '{}';
+        }
+      } catch (err) {
+        console.warn('OpenAI generateText network error:', err);
       }
     }
 
     // Fallback to Ollama
-    const res = await fetch(`${this.settings.ollamaBaseUrl || 'http://localhost:11434'}/api/generate`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: this.settings.ollamaModel || 'llama3.2',
-        prompt: prompt + '\nRespond only with valid JSON.',
-        stream: false,
-        format: 'json',
-      }),
-    });
-    if (res.ok) {
-      const data = await res.json();
-      return data.response;
+    const baseUrl = this.settings.ollamaBaseUrl || 'http://localhost:11434';
+    try {
+      const res = await fetch(`${baseUrl}/api/generate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: this.settings.ollamaModel || 'llama3.2',
+          prompt: prompt + '\nRespond only with valid JSON.',
+          stream: false,
+          format: 'json',
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        return data.response;
+      }
+    } catch (err) {
+      console.warn('Ollama generateText network error:', err);
     }
 
-    throw new Error('No AI provider available to generate evaluation');
+    throw new Error('No AI provider available to generate evaluation. Please check your API keys in Settings.');
   }
 
-  private async streamGemini(systemPrompt: string, history: { role: string; content: string }[], callbacks: StreamCallbacks) {
-    if (!this.settings.geminiApiKey) throw new Error('Google Gemini API Key is missing. Please add it in Settings.');
+  /**
+   * Sanitizes multi-turn history to adhere strictly to Google Gemini API specifications:
+   * 1. First turn must have role 'user'
+   * 2. Consecutive turns of the same role are merged
+   * 3. Last turn must have role 'user' so the model can generate the reply
+   * 4. Each part must have a valid non-empty text string
+   */
+  private formatGeminiContents(
+    conversation: { role: string; content: string }[]
+  ): { role: 'user' | 'model'; parts: { text: string }[] }[] {
+    const raw: { role: 'user' | 'model'; text: string }[] = [];
 
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${this.settings.geminiModel || 'gemini-1.5-flash'}:streamGenerateContent?alt=sse&key=${this.settings.geminiApiKey}`;
+    for (const msg of conversation) {
+      const text = msg.content?.trim();
+      if (!text) continue;
+      const role: 'user' | 'model' =
+        msg.role === 'assistant' || msg.role === 'model' || msg.role === 'interviewer'
+          ? 'model'
+          : 'user';
+      raw.push({ role, text });
+    }
 
-    const contents = history.map(h => ({
-      role: h.role === 'assistant' ? 'model' : 'user',
-      parts: [{ text: h.content }],
+    if (raw.length === 0) {
+      return [
+        {
+          role: 'user',
+          parts: [{ text: 'Hello! I am ready to begin the interview.' }],
+        },
+      ];
+    }
+
+    const merged: { role: 'user' | 'model'; text: string }[] = [];
+
+    // Rule 1: Gemini requires the first turn to have role 'user'
+    if (raw[0].role === 'model') {
+      merged.push({
+        role: 'user',
+        text: 'Hello, I am ready for the interview. Please introduce yourself and start with the first question.',
+      });
+    }
+
+    // Rule 2: Alternating turns (merge consecutive turns of the same role)
+    for (const item of raw) {
+      const prev = merged[merged.length - 1];
+      if (prev && prev.role === item.role) {
+        prev.text += `\n\n${item.text}`;
+      } else {
+        merged.push({ role: item.role, text: item.text });
+      }
+    }
+
+    // Rule 3: The last turn should be from 'user' so the model can generate a reply
+    const last = merged[merged.length - 1];
+    if (last && last.role === 'model') {
+      merged.push({
+        role: 'user',
+        text: 'Please evaluate my response and ask your next question.',
+      });
+    }
+
+    return merged.map(m => ({
+      role: m.role,
+      parts: [{ text: m.text.trim() || '...' }],
     }));
+  }
+
+  private async streamGemini(
+    systemPrompt: string,
+    history: { role: string; content: string }[],
+    callbacks: StreamCallbacks,
+    requestedModel?: string
+  ) {
+    const apiKey = this.getGeminiApiKey();
+    if (!apiKey) {
+      throw new Error('Google Gemini API Key is missing. Please click Settings (gear icon in the top right) to enter your Gemini API key.');
+    }
+
+    const baseModel = (requestedModel || this.settings.geminiModel || 'gemini-1.5-flash').trim().replace(/^models\//, '');
+    const modelsToTry = Array.from(new Set([
+      baseModel,
+      'gemini-1.5-flash',
+      'gemini-2.0-flash',
+      'gemini-2.5-flash',
+      'gemini-1.5-pro',
+    ]));
+
+    const contents = this.formatGeminiContents(history);
+
+    let lastError: Error | null = null;
+
+    for (const modelName of modelsToTry) {
+      try {
+        const success = await this.tryStreamGeminiModel(modelName, apiKey, systemPrompt, contents, callbacks);
+        if (success) {
+          return;
+        }
+      } catch (err: any) {
+        lastError = err;
+        console.warn(`Gemini model ${modelName} failed:`, err.message);
+
+        // If error is an invalid API key, fail immediately with clear instructions
+        if (err.message.toLowerCase().includes('api key') || err.message.toLowerCase().includes('unauthenticated')) {
+          throw err;
+        }
+
+        // If error is 404 (model not found), continue to try next model in candidate list
+        if (err.message.includes('404') || err.message.toLowerCase().includes('not found')) {
+          continue;
+        }
+
+        // If rate limited, throw clear message
+        if (err.message.includes('429') || err.message.toLowerCase().includes('quota') || err.message.toLowerCase().includes('exhausted')) {
+          throw new Error('Gemini API rate limit or quota exceeded (HTTP 429). Please wait a moment or try another model in Settings.');
+        }
+      }
+    }
+
+    if (lastError) throw lastError;
+    throw new Error('Failed to generate response from Google Gemini. Please check your API key and connection in Settings.');
+  }
+
+  private async tryStreamGeminiModel(
+    modelName: string,
+    apiKey: string,
+    systemPrompt: string,
+    contents: { role: 'user' | 'model'; parts: { text: string }[] }[],
+    callbacks: StreamCallbacks
+  ): Promise<boolean> {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:streamGenerateContent?alt=sse&key=${encodeURIComponent(apiKey)}`;
 
     const res = await fetch(url, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'x-goog-api-key': apiKey,
+      },
       body: JSON.stringify({
         systemInstruction: { parts: [{ text: systemPrompt }] },
         contents,
         generationConfig: {
           temperature: 0.7,
-          maxOutputTokens: 500,
+          maxOutputTokens: 600,
         },
       }),
     });
 
     if (!res.ok) {
       const errText = await res.text();
-      throw new Error(`Gemini API Error (${res.status}): ${errText}`);
+      let errorMsg = `Gemini API Error (${res.status})`;
+      try {
+        const errJson = JSON.parse(errText);
+        if (errJson?.error?.message) {
+          errorMsg = `Gemini API (${res.status}): ${errJson.error.message}`;
+        }
+      } catch {}
+      throw new Error(errorMsg);
     }
 
     const reader = res.body?.getReader();
-    const decoder = new TextDecoder();
+    const decoder = new TextDecoder('utf-8');
     let accumulated = '';
+    let buffer = '';
 
-    if (!reader) throw new Error('Response body reader not available');
+    if (!reader) throw new Error('Response stream reader not available');
 
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
 
-      const chunk = decoder.decode(value, { stream: true });
-      const lines = chunk.split('\n');
-      for (const line of lines) {
-        if (line.startsWith('data: ')) {
-          try {
-            const data = JSON.parse(line.slice(6));
-            const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
-            if (text) {
-              accumulated += text;
-              callbacks.onChunk(text);
-            }
-          } catch {
-            // Partial JSON SSE chunk ignore
+      buffer += decoder.decode(value, { stream: true });
+
+      // Split by standard SSE event boundaries (double newline)
+      const eventBlocks = buffer.split(/\r?\n\r?\n/);
+      buffer = eventBlocks.pop() || '';
+
+      for (const block of eventBlocks) {
+        const lines = block.split(/\r?\n/);
+        let dataPayload = '';
+
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (trimmed.startsWith('data:')) {
+            const content = trimmed.slice(5).trim();
+            dataPayload += (dataPayload ? '\n' : '') + content;
           }
+        }
+
+        if (!dataPayload || dataPayload === '[DONE]') continue;
+
+        try {
+          const parsed = JSON.parse(dataPayload);
+          const parts = parsed?.candidates?.[0]?.content?.parts || [];
+          for (const p of parts) {
+            if (p?.text) {
+              accumulated += p.text;
+              callbacks.onChunk(p.text);
+            }
+          }
+        } catch {
+          // Incomplete event chunk, skip
         }
       }
     }
 
-    callbacks.onComplete(accumulated);
+    // Process leftover buffer content
+    if (buffer.trim()) {
+      const lines = buffer.split(/\r?\n/);
+      let dataPayload = '';
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (trimmed.startsWith('data:')) {
+          dataPayload += (dataPayload ? '\n' : '') + trimmed.slice(5).trim();
+        }
+      }
+      if (dataPayload && dataPayload !== '[DONE]') {
+        try {
+          const parsed = JSON.parse(dataPayload);
+          const parts = parsed?.candidates?.[0]?.content?.parts || [];
+          for (const p of parts) {
+            if (p?.text) {
+              accumulated += p.text;
+              callbacks.onChunk(p.text);
+            }
+          }
+        } catch {}
+      }
+    }
+
+    if (accumulated.trim()) {
+      callbacks.onComplete(accumulated);
+      return true;
+    }
+
+    // Non-streaming fallback: If 0 tokens parsed from SSE stream, fetch directly via generateContent
+    console.warn(`Gemini streaming yielded 0 tokens on ${modelName}, attempting non-streaming generateContent fallback...`);
+    const directUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${encodeURIComponent(apiKey)}`;
+    const directRes = await fetch(directUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-goog-api-key': apiKey,
+      },
+      body: JSON.stringify({
+        systemInstruction: { parts: [{ text: systemPrompt }] },
+        contents,
+        generationConfig: {
+          temperature: 0.7,
+          maxOutputTokens: 600,
+        },
+      }),
+    });
+
+    if (directRes.ok) {
+      const directData = await directRes.json();
+      const parts = directData?.candidates?.[0]?.content?.parts || [];
+      let directText = '';
+      for (const p of parts) {
+        if (p?.text) directText += p.text;
+      }
+      if (directText.trim()) {
+        callbacks.onChunk(directText);
+        callbacks.onComplete(directText);
+        return true;
+      }
+    }
+
+    return false;
   }
 
   private async streamOpenAI(systemPrompt: string, history: { role: string; content: string }[], callbacks: StreamCallbacks) {
-    if (!this.settings.openaiApiKey) throw new Error('OpenAI API Key is missing.');
+    const apiKey = this.getOpenAIApiKey();
+    if (!apiKey) throw new Error('OpenAI API Key is missing. Please add it in Settings.');
 
     const res = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${this.settings.openaiApiKey}`,
+        Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
         model: this.settings.openaiModel || 'gpt-4o-mini',
@@ -391,13 +734,14 @@ Evaluate the candidate and return STRICTLY a valid JSON object matching this sch
   }
 
   private async streamGroq(systemPrompt: string, history: { role: string; content: string }[], callbacks: StreamCallbacks) {
-    if (!this.settings.groqApiKey) throw new Error('Groq API Key is missing.');
+    const apiKey = this.getGroqApiKey();
+    if (!apiKey) throw new Error('Groq API Key is missing. Please add it in Settings.');
 
     const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${this.settings.groqApiKey}`,
+        Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
         model: this.settings.groqModel || 'llama-3.3-70b-versatile',
@@ -442,6 +786,7 @@ Evaluate the candidate and return STRICTLY a valid JSON object matching this sch
     const reader = res.body?.getReader();
     const decoder = new TextDecoder();
     let accumulated = '';
+    let buffer = '';
 
     if (!reader) throw new Error('Ollama response body reader not available');
 
@@ -449,11 +794,15 @@ Evaluate the candidate and return STRICTLY a valid JSON object matching this sch
       const { done, value } = await reader.read();
       if (done) break;
 
-      const chunk = decoder.decode(value, { stream: true });
-      const lines = chunk.split('\n').filter(Boolean);
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
+
       for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed) continue;
         try {
-          const json = JSON.parse(line);
+          const json = JSON.parse(trimmed);
           const content = json?.message?.content || '';
           if (content) {
             accumulated += content;
@@ -470,6 +819,7 @@ Evaluate the candidate and return STRICTLY a valid JSON object matching this sch
     const reader = res.body?.getReader();
     const decoder = new TextDecoder();
     let accumulated = '';
+    let buffer = '';
 
     if (!reader) throw new Error('Response body reader not available');
 
@@ -477,15 +827,18 @@ Evaluate the candidate and return STRICTLY a valid JSON object matching this sch
       const { done, value } = await reader.read();
       if (done) break;
 
-      const chunk = decoder.decode(value, { stream: true });
-      const lines = chunk.split('\n');
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
 
       for (const line of lines) {
         const trimmed = line.trim();
         if (trimmed === 'data: [DONE]') continue;
-        if (trimmed.startsWith('data: ')) {
+        if (trimmed.startsWith('data:')) {
           try {
-            const data = JSON.parse(trimmed.slice(6));
+            const jsonStr = trimmed.slice(5).trim();
+            if (!jsonStr) continue;
+            const data = JSON.parse(jsonStr);
             const delta = data?.choices?.[0]?.delta?.content || '';
             if (delta) {
               accumulated += delta;
@@ -498,5 +851,101 @@ Evaluate the candidate and return STRICTLY a valid JSON object matching this sch
 
     callbacks.onComplete(accumulated);
   }
-}
 
+  /**
+   * Health-checks the selected provider's credentials and connectivity.
+   */
+  public async testConnection(provider: AIProvider = this.settings.activeProvider): Promise<{ ok: boolean; message: string }> {
+    if (provider === 'gemini') {
+      const apiKey = this.getGeminiApiKey();
+      if (!apiKey) {
+        return {
+          ok: false,
+          message: 'Google Gemini API key is missing. Please enter your API key in Settings.',
+        };
+      }
+
+      const baseModel = (this.settings.geminiModel || 'gemini-1.5-flash').trim().replace(/^models\//, '');
+      const modelsToTry = Array.from(new Set([baseModel, 'gemini-1.5-flash', 'gemini-2.0-flash', 'gemini-1.5-pro']));
+
+      let lastError = '';
+      for (const model of modelsToTry) {
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`;
+        try {
+          const res = await fetch(url, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-goog-api-key': apiKey,
+            },
+            body: JSON.stringify({
+              contents: [{ role: 'user', parts: [{ text: 'Respond with OK.' }] }],
+            }),
+          });
+
+          if (res.ok) {
+            return {
+              ok: true,
+              message: `Connected to Google Gemini (${model}) successfully!`,
+            };
+          }
+
+          const errText = await res.text();
+          try {
+            const parsed = JSON.parse(errText);
+            lastError = parsed?.error?.message || `HTTP ${res.status}`;
+            if (res.status === 400 && (lastError.toLowerCase().includes('api key') || lastError.toLowerCase().includes('invalid'))) {
+              return { ok: false, message: `Invalid API Key: ${lastError}` };
+            }
+          } catch {
+            lastError = `HTTP ${res.status}`;
+          }
+        } catch (err: any) {
+          lastError = err.message;
+        }
+      }
+      return { ok: false, message: `Gemini Error: ${lastError}` };
+    }
+
+    if (provider === 'openai') {
+      const apiKey = this.getOpenAIApiKey();
+      if (!apiKey) return { ok: false, message: 'OpenAI API key is missing.' };
+      try {
+        const res = await fetch('https://api.openai.com/v1/models', {
+          headers: { Authorization: `Bearer ${apiKey}` },
+        });
+        if (!res.ok) return { ok: false, message: `OpenAI error: HTTP ${res.status}` };
+        return { ok: true, message: 'Connected to OpenAI successfully!' };
+      } catch (err: any) {
+        return { ok: false, message: err.message };
+      }
+    }
+
+    if (provider === 'groq') {
+      const apiKey = this.getGroqApiKey();
+      if (!apiKey) return { ok: false, message: 'Groq API key is missing.' };
+      try {
+        const res = await fetch('https://api.groq.com/openai/v1/models', {
+          headers: { Authorization: `Bearer ${apiKey}` },
+        });
+        if (!res.ok) return { ok: false, message: `Groq error: HTTP ${res.status}` };
+        return { ok: true, message: 'Connected to Groq successfully!' };
+      } catch (err: any) {
+        return { ok: false, message: err.message };
+      }
+    }
+
+    if (provider === 'ollama') {
+      const baseUrl = this.settings.ollamaBaseUrl || 'http://localhost:11434';
+      try {
+        const res = await fetch(`${baseUrl}/api/tags`);
+        if (!res.ok) return { ok: false, message: `Ollama error: HTTP ${res.status}` };
+        return { ok: true, message: `Connected to Ollama at ${baseUrl}!` };
+      } catch (err: any) {
+        return { ok: false, message: `Cannot reach Ollama at ${baseUrl}` };
+      }
+    }
+
+    return { ok: false, message: `Unknown provider: ${provider}` };
+  }
+}

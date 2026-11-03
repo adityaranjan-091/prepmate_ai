@@ -13,6 +13,7 @@ import {
   Mic,
   Camera,
   Check,
+  AlertCircle,
 } from 'lucide-react';
 import { useInterviewStore } from '../../store/interviewStore';
 import { InterviewConfig, InterviewMode, CandidateLevel } from '../../types/interview';
@@ -20,7 +21,7 @@ import { resumeParserService, ParsedResume } from '../../services/resumeParser';
 import { DSA_PROBLEMS } from '../../data/dsaProblems';
 
 export const InterviewSetupModal: React.FC = () => {
-  const { startSession, settings } = useInterviewStore();
+  const { startSession, settings, setActiveTab, aiService } = useInterviewStore();
 
   const [mode, setMode] = useState<InterviewMode>('coding');
   const [targetRole, setTargetRole] = useState('Senior Software Engineer');
@@ -313,8 +314,34 @@ export const InterviewSetupModal: React.FC = () => {
           </div>
         </div>
 
+        {/* Key Missing Alert */}
+        {((settings.activeProvider === 'gemini' && !aiService.getGeminiApiKey()) ||
+          (settings.activeProvider === 'openai' && !aiService.getOpenAIApiKey()) ||
+          (settings.activeProvider === 'groq' && !aiService.getGroqApiKey())) && (
+          <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-between gap-3 text-xs text-amber-300">
+            <div className="flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0 text-amber-400" />
+              <span>
+                {settings.activeProvider === 'gemini'
+                  ? 'Google Gemini'
+                  : settings.activeProvider === 'openai'
+                  ? 'OpenAI'
+                  : 'Groq'}{' '}
+                API key is not configured.
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setActiveTab('settings')}
+              className="underline font-semibold hover:text-white shrink-0 cursor-pointer"
+            >
+              Configure in Settings &rarr;
+            </button>
+          </div>
+        )}
+
         {/* Launch Button */}
-        <div className="pt-4">
+        <div className="pt-2">
           <button
             onClick={handleLaunch}
             className="w-full py-3.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-semibold text-sm transition shadow-lg shadow-blue-500/25 flex items-center justify-center gap-2 cursor-pointer"

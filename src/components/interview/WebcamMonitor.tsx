@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Camera, CameraOff, Eye, ShieldAlert, Sparkles, Smile } from 'lucide-react';
+import { CameraOff, Eye, ShieldAlert, Sparkles, Smile } from 'lucide-react';
 import { visionService } from '../../services/visionService';
 import { useInterviewStore } from '../../store/interviewStore';
 
@@ -39,14 +39,14 @@ export const WebcamMonitor: React.FC<WebcamMonitorProps> = ({ enabled }) => {
     return () => {
       visionService.stopCamera();
     };
-  }, [enabled, settings.webcamDeviceId]);
+  }, [enabled, settings.webcamDeviceId, updateVisionMetrics]);
 
   const eyeScore = latestVisionMetrics?.eyeContactScore ?? 80;
   const confidence = latestVisionMetrics?.confidenceScore ?? 85;
   const isSlouching = latestVisionMetrics?.postureAlert ?? false;
 
   return (
-    <div className="relative w-full aspect-video rounded-2xl bg-gray-950 border border-gray-800 flex items-center justify-center overflow-hidden shadow-2xl">
+    <div className="relative w-full aspect-video rounded-2xl bg-gray-950 border border-gray-800 flex items-center justify-center overflow-hidden shadow-2xl select-none">
       {enabled ? (
         <>
           <video
@@ -110,4 +110,3 @@ export const WebcamMonitor: React.FC<WebcamMonitorProps> = ({ enabled }) => {
     </div>
   );
 };
-

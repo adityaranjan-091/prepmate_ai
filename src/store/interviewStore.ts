@@ -71,8 +71,16 @@ const SESSIONS_STORAGE_KEY = 'prepmate_sessions_v1';
 
 const loadSavedSettings = (): AppSettings => {
   try {
-    const raw = localStorage.getItem(SETTINGS_STORAGE_KEY);
-    return raw ? { ...DEFAULT_SETTINGS, ...JSON.parse(raw) } : DEFAULT_SETTINGS;
+    const raw = localStorage.getItem(SETTINGS_STORAGE_KEY) || localStorage.getItem('intervai_settings_v1');
+    if (!raw) return DEFAULT_SETTINGS;
+    const parsed = JSON.parse(raw);
+    return {
+      ...DEFAULT_SETTINGS,
+      ...parsed,
+      geminiApiKey: parsed.geminiApiKey?.trim() || DEFAULT_SETTINGS.geminiApiKey,
+      openaiApiKey: parsed.openaiApiKey?.trim() || DEFAULT_SETTINGS.openaiApiKey,
+      groqApiKey: parsed.groqApiKey?.trim() || DEFAULT_SETTINGS.groqApiKey,
+    };
   } catch {
     return DEFAULT_SETTINGS;
   }
@@ -98,7 +106,11 @@ export const useInterviewStore = create<InterviewState>((set, get) => {
     settings: initialSettings,
     updateSettings: (newSettings) => {
       set((state) => {
-        const merged = { ...state.settings, ...newSettings };
+        const sanitized = { ...newSettings };
+        if (typeof sanitized.geminiApiKey === 'string') sanitized.geminiApiKey = sanitized.geminiApiKey.trim();
+        if (typeof sanitized.openaiApiKey === 'string') sanitized.openaiApiKey = sanitized.openaiApiKey.trim();
+        if (typeof sanitized.groqApiKey === 'string') sanitized.groqApiKey = sanitized.groqApiKey.trim();
+        const merged = { ...state.settings, ...sanitized };
         try {
           localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(merged));
         } catch {}
