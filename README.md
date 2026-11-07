@@ -1,4 +1,4 @@
-# Prepmate AI 🎙️💻👁️
+# Prepmate AI
 
 **Prepmate AI** is a high-performance desktop application for AI-powered mock interview preparation built with **Tauri 2.0 (Rust)**, **React 19**, **TypeScript**, and **Tailwind CSS**.
 

@@ -7,8 +7,11 @@ import {
   Pause,
   Play,
   Cpu,
+  LogOut,
+  User as UserIcon,
 } from 'lucide-react';
 import { useInterviewStore } from '../../store/interviewStore';
+import { useAuthStore } from '../../store/authStore';
 
 export const Header: React.FC = () => {
   const {
@@ -21,6 +24,7 @@ export const Header: React.FC = () => {
     postureAlertActive,
   } = useInterviewStore();
 
+  const { user, signOut } = useAuthStore();
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
 
   useEffect(() => {
@@ -40,12 +44,13 @@ export const Header: React.FC = () => {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  // ---------- Presentation-only helpers (derived from existing state) ----------
   const isInProgress = currentSession?.status === 'in_progress';
   const isSettingsOpen = activeTab === 'settings';
 
   const focusRing =
     'focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/60 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900';
+
+  const userDisplayName = user?.displayName || user?.email?.split('@')[0] || 'User';
 
   return (
     <header className="relative z-20 h-16 shrink-0 flex items-center gap-4 px-6 border-b border-gray-800/80 bg-gray-900/80 backdrop-blur-xl select-none">
@@ -77,15 +82,15 @@ export const Header: React.FC = () => {
       {/* ───────────── Center: Active session pill ───────────── */}
       {currentSession && activeTab === 'interview' && (
         <div className="shrink-0 flex items-center gap-3.5 pl-4 pr-1.5 py-1.5 rounded-full bg-gray-800/70 border border-gray-700/60 shadow-inner shadow-black/20">
-          {/* Status + mode */}
           <div className="flex items-center gap-2">
             <span className="relative flex w-2.5 h-2.5">
               {isInProgress && (
                 <span className="absolute inline-flex w-full h-full rounded-full bg-emerald-400 opacity-75 animate-ping" />
               )}
               <span
-                className={`relative inline-flex w-2.5 h-2.5 rounded-full ${isInProgress ? 'bg-emerald-500' : 'bg-amber-500'
-                  }`}
+                className={`relative inline-flex w-2.5 h-2.5 rounded-full ${
+                  isInProgress ? 'bg-emerald-500' : 'bg-amber-500'
+                }`}
               />
             </span>
             <span className="text-[11px] font-semibold text-gray-200 uppercase tracking-wider">
@@ -97,8 +102,9 @@ export const Header: React.FC = () => {
 
           {/* Timer */}
           <div
-            className={`flex items-center gap-1.5 text-xs font-mono tabular-nums ${isInProgress ? 'text-blue-300' : 'text-amber-300'
-              }`}
+            className={`flex items-center gap-1.5 text-xs font-mono tabular-nums ${
+              isInProgress ? 'text-blue-300' : 'text-amber-300'
+            }`}
             title="Elapsed time"
           >
             <Clock className="w-3.5 h-3.5" />
@@ -172,13 +178,49 @@ export const Header: React.FC = () => {
           title="Open Settings"
           aria-label="Open Settings"
           aria-pressed={isSettingsOpen}
-          className={`grid place-items-center w-9 h-9 rounded-xl border transition-all cursor-pointer active:scale-95 ${focusRing} ${isSettingsOpen
+          className={`grid place-items-center w-9 h-9 rounded-xl border transition-all cursor-pointer active:scale-95 ${focusRing} ${
+            isSettingsOpen
               ? 'bg-blue-600/20 border-blue-500/40 text-blue-300 shadow-md shadow-blue-600/20'
               : 'bg-gray-800/70 hover:bg-gray-700 border-gray-700/70 text-gray-300 hover:text-white'
-            }`}
+          }`}
         >
           <Settings className={`w-4 h-4 transition-transform duration-300 ${isSettingsOpen ? 'rotate-90' : ''}`} />
         </button>
+
+        {/* User Profile & Sign Out */}
+        {user && (
+          <div className="flex items-center gap-2 pl-1 border-l border-gray-800">
+            <div
+              className="flex items-center gap-2 px-2.5 py-1 rounded-xl bg-gray-800/50 border border-gray-700/50 text-xs"
+              title={user.email || ''}
+            >
+              {user.photoURL ? (
+                <img
+                  src={user.photoURL}
+                  alt={userDisplayName}
+                  className="w-6 h-6 rounded-full object-cover ring-1 ring-blue-500/40"
+                />
+              ) : (
+                <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 text-white font-semibold text-[10px] grid place-items-center ring-1 ring-white/10 uppercase">
+                  {userDisplayName.slice(0, 2)}
+                </div>
+              )}
+              <span className="font-medium text-gray-200 max-w-[100px] truncate">
+                {userDisplayName}
+              </span>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => signOut()}
+              title="Sign Out"
+              aria-label="Sign Out"
+              className={`grid place-items-center w-9 h-9 rounded-xl bg-gray-800/70 hover:bg-red-500/15 hover:border-red-500/30 hover:text-red-400 border border-gray-700/70 text-gray-400 transition-all cursor-pointer active:scale-95 ${focusRing}`}
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
+          </div>
+        )}
       </div>
     </header>
   );

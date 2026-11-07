@@ -6,11 +6,15 @@ import {
   FileText,
   History,
   Sliders,
+  LogOut,
+  User as UserIcon,
 } from 'lucide-react';
 import { useInterviewStore } from '../../store/interviewStore';
+import { useAuthStore } from '../../store/authStore';
 
 export const Sidebar: React.FC = () => {
   const { activeTab, setActiveTab, currentSession } = useInterviewStore();
+  const { user, signOut } = useAuthStore();
 
   const navItems = [
     {
@@ -48,8 +52,8 @@ export const Sidebar: React.FC = () => {
     },
   ];
 
-  // ---------- Presentation-only helpers (derived from existing state) ----------
   const isSessionLive = currentSession?.status === 'in_progress';
+  const userDisplayName = user?.displayName || user?.email?.split('@')[0] || 'User';
 
   return (
     <aside className="relative w-64 shrink-0 flex flex-col justify-between gap-4 p-4 border-r border-gray-800/80 bg-gradient-to-b from-gray-900/70 to-gray-950/80 select-none">
@@ -76,27 +80,31 @@ export const Sidebar: React.FC = () => {
                   onClick={() => setActiveTab(item.id as any)}
                   aria-current={isActive ? 'page' : undefined}
                   title={item.label}
-                  className={`group relative w-full flex items-center justify-between gap-2 pl-2.5 pr-3 py-2 rounded-xl border text-sm font-medium transition-all duration-200 cursor-pointer active:scale-[0.99] focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/60 ${isActive
+                  className={`group relative w-full flex items-center justify-between gap-2 pl-2.5 pr-3 py-2 rounded-xl border text-sm font-medium transition-all duration-200 cursor-pointer active:scale-[0.99] focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/60 ${
+                    isActive
                       ? 'bg-gradient-to-r from-blue-600/20 to-blue-600/5 text-blue-300 border-blue-500/30 shadow-sm shadow-blue-500/10'
                       : 'text-gray-400 hover:text-gray-100 hover:bg-gray-800/60 border-transparent'
-                    }`}
+                  }`}
                 >
                   {/* Active accent bar */}
                   <span
-                    className={`absolute left-0 top-1/2 -translate-y-1/2 w-[3px] rounded-r-full bg-blue-400 shadow-[0_0_10px_rgba(96,165,250,0.7)] transition-all duration-200 ${isActive ? 'h-5 opacity-100' : 'h-0 opacity-0'
-                      }`}
+                    className={`absolute left-0 top-1/2 -translate-y-1/2 w-[3px] rounded-r-full bg-blue-400 shadow-[0_0_10px_rgba(96,165,250,0.7)] transition-all duration-200 ${
+                      isActive ? 'h-5 opacity-100' : 'h-0 opacity-0'
+                    }`}
                   />
 
                   <div className="flex items-center gap-3 min-w-0">
                     <span
-                      className={`grid place-items-center w-8 h-8 shrink-0 rounded-lg border transition-colors duration-200 ${isActive
+                      className={`grid place-items-center w-8 h-8 shrink-0 rounded-lg border transition-colors duration-200 ${
+                        isActive
                           ? 'bg-blue-500/15 border-blue-500/30'
                           : 'bg-gray-800/60 border-gray-700/60 group-hover:bg-gray-800 group-hover:border-gray-600'
-                        }`}
+                      }`}
                     >
                       <Icon
-                        className={`w-4 h-4 transition-colors ${isActive ? 'text-blue-400' : 'text-gray-400 group-hover:text-gray-200'
-                          }`}
+                        className={`w-4 h-4 transition-colors ${
+                          isActive ? 'text-blue-400' : 'text-gray-400 group-hover:text-gray-200'
+                        }`}
                       />
                     </span>
                     <span className="truncate">{item.label}</span>
@@ -117,45 +125,86 @@ export const Sidebar: React.FC = () => {
         </nav>
       </div>
 
-      {/* ───────────── Footer: Current session card ───────────── */}
-      {currentSession && (
-        <div className="shrink-0 rounded-xl border border-gray-800 bg-gray-900/70 p-3 shadow-inner shadow-black/20">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-gray-500">
-              Current Session
-            </span>
-            <span
-              className={`inline-flex items-center gap-1.5 text-[10px] font-medium ${isSessionLive ? 'text-emerald-400' : 'text-amber-400'
-                }`}
-            >
-              <span className="relative flex w-1.5 h-1.5">
-                {isSessionLive && (
-                  <span className="absolute inline-flex w-full h-full rounded-full bg-emerald-400 opacity-75 animate-ping" />
-                )}
-                <span
-                  className={`relative inline-flex w-1.5 h-1.5 rounded-full ${isSessionLive ? 'bg-emerald-500' : 'bg-amber-500'
-                    }`}
-                />
+      {/* ───────────── Footer: Current session + User card ───────────── */}
+      <div className="shrink-0 space-y-2">
+        {currentSession && (
+          <div className="rounded-xl border border-gray-800 bg-gray-900/70 p-3 shadow-inner shadow-black/20">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-gray-500">
+                Current Session
               </span>
-              {isSessionLive ? 'In progress' : 'Paused'}
+              <span
+                className={`inline-flex items-center gap-1.5 text-[10px] font-medium ${
+                  isSessionLive ? 'text-emerald-400' : 'text-amber-400'
+                }`}
+              >
+                <span className="relative flex w-1.5 h-1.5">
+                  {isSessionLive && (
+                    <span className="absolute inline-flex w-full h-full rounded-full bg-emerald-400 opacity-75 animate-ping" />
+                  )}
+                  <span
+                    className={`relative inline-flex w-1.5 h-1.5 rounded-full ${
+                      isSessionLive ? 'bg-emerald-500' : 'bg-amber-500'
+                    }`}
+                  />
+                </span>
+                {isSessionLive ? 'In progress' : 'Paused'}
+              </span>
+            </div>
+
+            <p className="text-xs font-semibold text-gray-200 truncate" title={currentSession.config.targetRole}>
+              {currentSession.config.targetRole}
+            </p>
+            <p
+              className="mt-0.5 text-[11px] text-gray-500 truncate"
+              title={currentSession.config.targetCompany}
+            >
+              @ {currentSession.config.targetCompany}
+            </p>
+
+            <span className="mt-2.5 inline-block text-[10px] font-medium uppercase tracking-wider px-2 py-0.5 rounded-md bg-gray-800 border border-gray-700 text-gray-400">
+              {currentSession.config.mode.replace('_', ' ')}
             </span>
           </div>
+        )}
 
-          <p className="text-xs font-semibold text-gray-200 truncate" title={currentSession.config.targetRole}>
-            {currentSession.config.targetRole}
-          </p>
-          <p
-            className="mt-0.5 text-[11px] text-gray-500 truncate"
-            title={currentSession.config.targetCompany}
-          >
-            @ {currentSession.config.targetCompany}
-          </p>
+        {/* User Account Card */}
+        {user && (
+          <div className="flex items-center justify-between gap-2 p-2.5 rounded-xl border border-gray-800/90 bg-gray-900/60 hover:bg-gray-900/90 transition-all">
+            <div className="flex items-center gap-2.5 min-w-0">
+              {user.photoURL ? (
+                <img
+                  src={user.photoURL}
+                  alt={userDisplayName}
+                  className="w-8 h-8 rounded-full object-cover shrink-0 ring-1 ring-blue-500/30"
+                />
+              ) : (
+                <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 text-white font-semibold text-xs grid place-items-center shrink-0 ring-1 ring-white/10 uppercase">
+                  {userDisplayName.slice(0, 2)}
+                </div>
+              )}
+              <div className="min-w-0">
+                <p className="text-xs font-semibold text-gray-200 truncate">
+                  {userDisplayName}
+                </p>
+                <p className="text-[10px] text-gray-500 truncate" title={user.email || ''}>
+                  {user.email || 'Authenticated'}
+                </p>
+              </div>
+            </div>
 
-          <span className="mt-2.5 inline-block text-[10px] font-medium uppercase tracking-wider px-2 py-0.5 rounded-md bg-gray-800 border border-gray-700 text-gray-400">
-            {currentSession.config.mode.replace('_', ' ')}
-          </span>
-        </div>
-      )}
+            <button
+              type="button"
+              onClick={() => signOut()}
+              title="Sign Out"
+              aria-label="Sign Out"
+              className="p-1.5 rounded-lg text-gray-400 hover:text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+      </div>
     </aside>
   );
 };
