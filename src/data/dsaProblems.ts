@@ -39,7 +39,22 @@ You can return the answer in any order.`,
  * @return {number[]}
  */
 function twoSum(nums, target) {
-  // Write your solution here
+  // TODO: Implement your O(N) solution using a Hash Map
+  
+}
+`,
+      typescript: `function twoSum(nums: number[], target: number): number[] {
+  // TODO: Implement your O(N) solution using a Hash Map
+  return [];
+}
+`,
+      python: `def two_sum(nums: list[int], target: int) -> list[int]:
+    # TODO: Implement your O(N) solution using a dictionary
+    pass
+`,
+    },
+    solutionCode: {
+      javascript: `function twoSum(nums, target) {
   const map = new Map();
   for (let i = 0; i < nums.length; i++) {
     const complement = target - nums[i];
@@ -62,7 +77,6 @@ function twoSum(nums, target) {
   return [];
 }`,
       python: `def two_sum(nums: list[int], target: int) -> list[int]:
-    # Write your solution here
     seen = {}
     for i, num in enumerate(nums):
         complement = target - num
@@ -133,9 +147,24 @@ An input string is valid if:
  * @return {boolean}
  */
 function isValid(s) {
+  // TODO: Use a stack to track open brackets
+  
+}
+`,
+      typescript: `function isValid(s: string): boolean {
+  // TODO: Use a stack to track open brackets
+  return false;
+}
+`,
+      python: `def is_valid(s: str) -> bool:
+    # TODO: Use a stack to track open brackets
+    pass
+`,
+    },
+    solutionCode: {
+      javascript: `function isValid(s) {
   const stack = [];
   const map = { ')': '(', '}': '{', ']': '[' };
-  
   for (const char of s) {
     if (map[char]) {
       if (stack.pop() !== map[char]) return false;
@@ -148,7 +177,6 @@ function isValid(s) {
       typescript: `function isValid(s: string): boolean {
   const stack: string[] = [];
   const map: Record<string, string> = { ')': '(', '}': '{', ']': '[' };
-  
   for (const char of s) {
     if (map[char]) {
       if (stack.pop() !== map[char]) return false;
@@ -202,6 +230,125 @@ function isValid(s) {
     },
   },
   {
+    id: 'longest-substring',
+    title: 'Longest Substring Without Repeating Characters',
+    difficulty: 'Medium',
+    category: 'Sliding Window',
+    description: `Given a string \`s\`, find the length of the **longest substring** without repeating characters.`,
+    examples: [
+      {
+        input: 's = "abcabcbb"',
+        output: '3',
+        explanation: 'The answer is "abc", with the length of 3.',
+      },
+      {
+        input: 's = "bbbbb"',
+        output: '1',
+        explanation: 'The answer is "b", with the length of 1.',
+      },
+      {
+        input: 's = "pwwkew"',
+        output: '3',
+        explanation: 'The answer is "wke", with the length of 3.',
+      },
+    ],
+    constraints: [
+      '0 <= s.length <= 5 * 10^4',
+      's consists of English letters, digits, symbols and spaces.',
+    ],
+    starterCode: {
+      javascript: `/**
+ * @param {string} s
+ * @return {number}
+ */
+function lengthOfLongestSubstring(s) {
+  // TODO: Use sliding window technique with left and right pointers
+  
+}
+`,
+      typescript: `function lengthOfLongestSubstring(s: string): number {
+  // TODO: Use sliding window technique
+  return 0;
+}
+`,
+      python: `def length_of_longest_substring(s: str) -> int:
+    # TODO: Implement sliding window
+    pass
+`,
+    },
+    solutionCode: {
+      javascript: `function lengthOfLongestSubstring(s) {
+  let maxLength = 0;
+  let left = 0;
+  const map = new Map();
+  for (let right = 0; right < s.length; right++) {
+    const char = s[right];
+    if (map.has(char) && map.get(char) >= left) {
+      left = map.get(char) + 1;
+    }
+    map.set(char, right);
+    maxLength = Math.max(maxLength, right - left + 1);
+  }
+  return maxLength;
+}`,
+      typescript: `function lengthOfLongestSubstring(s: string): number {
+  let maxLength = 0;
+  let left = 0;
+  const map = new Map<string, number>();
+  for (let right = 0; right < s.length; right++) {
+    const char = s[right];
+    if (map.has(char) && map.get(char)! >= left) {
+      left = map.get(char)! + 1;
+    }
+    map.set(char, right);
+    maxLength = Math.max(maxLength, right - left + 1);
+  }
+  return maxLength;
+}`,
+      python: `def length_of_longest_substring(s: str) -> int:
+    seen = {}
+    left = 0
+    max_len = 0
+    for right, char in enumerate(s):
+        if char in seen and seen[char] >= left:
+            left = seen[char] + 1
+        seen[char] = right
+        max_len = max(max_len, right - left + 1)
+    return max_len`,
+    },
+    testCases: [
+      {
+        id: 'tc-1',
+        input: '["abcabcbb"]',
+        expectedOutput: '3',
+      },
+      {
+        id: 'tc-2',
+        input: '["bbbbb"]',
+        expectedOutput: '1',
+      },
+      {
+        id: 'tc-3',
+        input: '["pwwkew"]',
+        expectedOutput: '3',
+      },
+      {
+        id: 'tc-4',
+        input: '[""]',
+        expectedOutput: '0',
+      },
+    ],
+    hints: [
+      'Think of a sliding window with two pointers: [left...right].',
+      'Use a hash map to remember the last seen index of each character.',
+      'When you see a repeated character, move the left pointer just past its last occurrence.',
+    ],
+    optimalComplexity: {
+      time: 'O(N)',
+      space: 'O(min(M, N))',
+    },
+  },
+  {
     id: 'lru-cache',
     title: 'LRU Cache Design',
     difficulty: 'Medium',
@@ -227,6 +374,61 @@ The functions \`get\` and \`put\` must each run in \`O(1)\` average time complex
       'At most 2 * 10^5 calls will be made to get and put.',
     ],
     starterCode: {
+      javascript: `class LRUCache {
+  /**
+   * @param {number} capacity
+   */
+  constructor(capacity) {
+    this.capacity = capacity;
+    // TODO: Initialize data structures (Map / Doubly Linked List)
+  }
+
+  /** 
+   * @param {number} key
+   * @return {number}
+   */
+  get(key) {
+    // TODO: Return value and mark as recently accessed
+    return -1;
+  }
+
+  /** 
+   * @param {number} key 
+   * @param {number} value
+   * @return {void}
+   */
+  put(key, value) {
+    // TODO: Insert/update and evict LRU if at capacity
+  }
+}
+`,
+      typescript: `class LRUCache {
+  private capacity: number;
+
+  constructor(capacity: number) {
+    this.capacity = capacity;
+  }
+
+  get(key: number): number {
+    return -1;
+  }
+
+  put(key: number, value: number): void {
+  }
+}
+`,
+      python: `class LRUCache:
+    def __init__(self, capacity: int):
+        self.capacity = capacity
+
+    def get(self, key: int) -> int:
+        return -1
+
+    def put(self, key: int, value: int) -> None:
+        pass
+`,
+    },
+    solutionCode: {
       javascript: `class LRUCache {
   constructor(capacity) {
     this.capacity = capacity;
@@ -272,46 +474,45 @@ The functions \`get\` and \`put\` must each run in \`O(1)\` average time complex
     if (this.cache.has(key)) {
       this.cache.delete(key);
     } else if (this.cache.size >= this.capacity) {
-      const oldestKey = this.cache.keys().next().value;
-      if (oldestKey !== undefined) this.cache.delete(oldestKey);
+      const oldestKey = this.cache.keys().next().value!;
+      this.cache.delete(oldestKey);
     }
     this.cache.set(key, value);
   }
 }`,
-      python: `from collections import OrderedDict
-
-class LRUCache:
+      python: `class LRUCache:
     def __init__(self, capacity: int):
         self.capacity = capacity
-        self.cache = OrderedDict()
+        self.cache = {}
 
     def get(self, key: int) -> int:
         if key not in self.cache:
             return -1
-        self.cache.move_to_end(key)
-        return self.cache[key]
+        val = self.cache.pop(key)
+        self.cache[key] = val
+        return val
 
     def put(self, key: int, value: int) -> None:
         if key in self.cache:
-            self.cache.move_to_end(key)
-        self.cache[key] = value
-        if len(self.cache) > self.capacity:
-            self.cache.popitem(last=False)`,
+            self.cache.pop(key)
+        elif len(self.cache) >= self.capacity:
+            oldest = next(iter(self.cache))
+            del self.cache[oldest]
+        self.cache[key] = value`,
     },
     testCases: [
       {
         id: 'tc-1',
-        input: '{"ops":["put","put","get","put","get"],"args":[[1,1],[2,2],[1],[3,3],[2]]}',
-        expectedOutput: '[null,null,1,null,-1]',
+        input: '{"ops":["LRUCache","put","put","get","put","get","put","get","get","get"],"args":[[2],[1,1],[2,2],[1],[3,3],[2],[4,4],[1],[3],[4]]}',
+        expectedOutput: '[null,null,null,1,null,-1,null,-1,3,4]',
       },
     ],
     hints: [
-      'To achieve O(1) for both get and put, you need fast lookup (Hash Map) combined with fast ordering/removal.',
-      'A Doubly Linked List paired with a Hash Map allows removing and moving nodes to head/tail in O(1).',
-      'In JavaScript, Map retains insertion order! Deleting and re-setting an entry moves it to the most recent position.',
+      'In JavaScript, Map preserves insertion order. In other languages, a Doubly Linked List paired with a Hash Map yields O(1) operations.',
+      'When an element is accessed or modified, refresh its order by removing and re-inserting.',
     ],
     optimalComplexity: {
-      time: 'O(1) for get and put',
+      time: 'O(1) get & put',
       space: 'O(Capacity)',
     },
   },
@@ -344,38 +545,50 @@ class LRUCache:
  * @return {number[][]}
  */
 function merge(intervals) {
+  // TODO: Sort intervals by start time first, then merge
+  
+}
+`,
+      typescript: `function merge(intervals: number[][]): number[][] {
+  // TODO: Sort intervals by start time first, then merge
+  return [];
+}
+`,
+      python: `def merge(intervals: list[list[int]]) -> list[list[int]]:
+    # TODO: Sort intervals and merge overlaps
+    pass
+`,
+    },
+    solutionCode: {
+      javascript: `function merge(intervals) {
   if (intervals.length <= 1) return intervals;
   intervals.sort((a, b) => a[0] - b[0]);
-  
-  const result = [intervals[0]];
+  const merged = [intervals[0]];
   for (let i = 1; i < intervals.length; i++) {
     const current = intervals[i];
-    const last = result[result.length - 1];
-    
+    const last = merged[merged.length - 1];
     if (current[0] <= last[1]) {
       last[1] = Math.max(last[1], current[1]);
     } else {
-      result.push(current);
+      merged.push(current);
     }
   }
-  return result;
+  return merged;
 }`,
       typescript: `function merge(intervals: number[][]): number[][] {
   if (intervals.length <= 1) return intervals;
   intervals.sort((a, b) => a[0] - b[0]);
-  
-  const result: number[][] = [intervals[0]];
+  const merged: number[][] = [intervals[0]];
   for (let i = 1; i < intervals.length; i++) {
     const current = intervals[i];
-    const last = result[result.length - 1];
-    
+    const last = merged[merged.length - 1];
     if (current[0] <= last[1]) {
       last[1] = Math.max(last[1], current[1]);
     } else {
-      result.push(current);
+      merged.push(current);
     }
   }
-  return result;
+  return merged;
 }`,
       python: `def merge(intervals: list[list[int]]) -> list[list[int]]:
     intervals.sort(key=lambda x: x[0])
@@ -400,13 +613,124 @@ function merge(intervals) {
       },
     ],
     hints: [
-      'If the intervals were sorted by their start times, how does that simplify finding overlaps?',
-      'Once sorted, an interval can only overlap with its immediate predecessor in the merged list.',
+      'If intervals are sorted by their starting value, overlapping intervals are guaranteed to be adjacent.',
+      'Iterate through the sorted intervals: if the current start is <= the previous end, merge them by updating the previous end.',
     ],
     optimalComplexity: {
       time: 'O(N log N)',
       space: 'O(N)',
     },
   },
-];
+  {
+    id: 'coin-change',
+    title: 'Coin Change',
+    difficulty: 'Medium',
+    category: 'Dynamic Programming',
+    description: `You are given an integer array \`coins\` representing coins of different denominations and an integer \`amount\` representing a total amount of money.
 
+Return the fewest number of coins that you need to make up that amount. If that amount of money cannot be made up by any combination of the coins, return \`-1\`.
+
+You may assume that you have an infinite number of each kind of coin.`,
+    examples: [
+      {
+        input: 'coins = [1,2,5], amount = 11',
+        output: '3',
+        explanation: '11 = 5 + 5 + 1',
+      },
+      {
+        input: 'coins = [2], amount = 3',
+        output: '-1',
+      },
+      {
+        input: 'coins = [1], amount = 0',
+        output: '0',
+      },
+    ],
+    constraints: [
+      '1 <= coins.length <= 12',
+      '1 <= coins[i] <= 2^31 - 1',
+      '0 <= amount <= 10^4',
+    ],
+    starterCode: {
+      javascript: `/**
+ * @param {number[]} coins
+ * @param {number} amount
+ * @return {number}
+ */
+function coinChange(coins, amount) {
+  // TODO: Build bottom-up DP table where dp[i] is min coins for amount i
+  
+}
+`,
+      typescript: `function coinChange(coins: number[], amount: number): number {
+  // TODO: Build bottom-up DP table
+  return -1;
+}
+`,
+      python: `def coin_change(coins: list[int], amount: int) -> int:
+    # TODO: Build bottom-up DP table
+    pass
+`,
+    },
+    solutionCode: {
+      javascript: `function coinChange(coins, amount) {
+  const dp = new Array(amount + 1).fill(Infinity);
+  dp[0] = 0;
+  for (let i = 1; i <= amount; i++) {
+    for (const coin of coins) {
+      if (i - coin >= 0) {
+        dp[i] = Math.min(dp[i], dp[i - coin] + 1);
+      }
+    }
+  }
+  return dp[amount] === Infinity ? -1 : dp[amount];
+}`,
+      typescript: `function coinChange(coins: number[], amount: number): number {
+  const dp = new Array(amount + 1).fill(Infinity);
+  dp[0] = 0;
+  for (let i = 1; i <= amount; i++) {
+    for (const coin of coins) {
+      if (i - coin >= 0) {
+        dp[i] = Math.min(dp[i], dp[i - coin] + 1);
+      }
+    }
+  }
+  return dp[amount] === Infinity ? -1 : dp[amount];
+}`,
+      python: `def coin_change(coins: list[int], amount: int) -> int:
+    dp = [float('inf')] * (amount + 1)
+    dp[0] = 0
+    for i in range(1, amount + 1):
+        for coin in coins:
+            if i - coin >= 0:
+                dp[i] = min(dp[i], dp[i - coin] + 1)
+    return dp[amount] if dp[amount] != float('inf') else -1`,
+    },
+    testCases: [
+      {
+        id: 'tc-1',
+        input: '[[1,2,5], 11]',
+        expectedOutput: '3',
+      },
+      {
+        id: 'tc-2',
+        input: '[[2], 3]',
+        expectedOutput: '-1',
+      },
+      {
+        id: 'tc-3',
+        input: '[[1], 0]',
+        expectedOutput: '0',
+      },
+    ],
+    hints: [
+      'Define dp[i] as the minimum number of coins needed to make amount i.',
+      'Initialize dp[0] = 0 and all other dp[i] to Infinity.',
+      'For each amount from 1 to total, check each coin: dp[i] = min(dp[i], dp[i - coin] + 1).',
+    ],
+    optimalComplexity: {
+      time: 'O(Amount * Coins)',
+      space: 'O(Amount)',
+    },
+  },
+];

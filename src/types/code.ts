@@ -9,7 +9,7 @@ export interface DSAProblem {
   id: string;
   title: string;
   difficulty: 'Easy' | 'Medium' | 'Hard';
-  category: 'Arrays & Hashing' | 'Two Pointers' | 'Sliding Window' | 'Trees & Graphs' | 'Dynamic Programming' | 'System Design';
+  category: 'Arrays & Hashing' | 'Two Pointers' | 'Sliding Window' | 'Trees & Graphs' | 'Dynamic Programming' | 'System Design' | 'Linked Lists';
   description: string;
   examples: {
     input: string;
@@ -21,6 +21,11 @@ export interface DSAProblem {
     javascript: string;
     python: string;
     typescript: string;
+  };
+  solutionCode?: {
+    javascript?: string;
+    typescript?: string;
+    python?: string;
   };
   testCases: TestCase[];
   hints: string[];
@@ -46,4 +51,3 @@ export interface ExecutionResult {
     error?: string;
   }[];
 }
-

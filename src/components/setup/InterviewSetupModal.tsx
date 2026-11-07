@@ -14,6 +14,7 @@ import {
   Camera,
   Check,
   AlertCircle,
+  HelpCircle,
 } from 'lucide-react';
 import { useInterviewStore } from '../../store/interviewStore';
 import { InterviewConfig, InterviewMode, CandidateLevel } from '../../types/interview';
@@ -34,10 +35,11 @@ export const InterviewSetupModal: React.FC = () => {
   const [voiceEnabled, setVoiceEnabled] = useState(true);
   const [videoEnabled, setVideoEnabled] = useState(true);
   const [durationMinutes, setDurationMinutes] = useState(30);
+  const [isExtractingFile, setIsExtractingFile] = useState(false);
 
   const handleResumeChange = (text: string) => {
     setResumeText(text);
-    if (text.length > 50) {
+    if (text.trim().length > 40) {
       const parsed = resumeParserService.parseText(text);
       setParsedResume(parsed);
     } else {
@@ -45,15 +47,18 @@ export const InterviewSetupModal: React.FC = () => {
     }
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const content = event.target?.result as string;
+      setIsExtractingFile(true);
+      try {
+        const content = await resumeParserService.extractTextFromFile(file);
         handleResumeChange(content);
-      };
-      reader.readAsText(file);
+      } catch (err) {
+        console.error('File extraction error:', err);
+      } finally {
+        setIsExtractingFile(false);
+      }
     }
   };
 
@@ -67,7 +72,12 @@ export const InterviewSetupModal: React.FC = () => {
       jobDescription: jobDescription.trim() || undefined,
       dsaProblemId: mode === 'coding' ? dsaProblemId : undefined,
       provider: settings.activeProvider,
-      model: settings.activeProvider === 'gemini' ? settings.geminiModel : settings.activeProvider === 'openai' ? settings.openaiModel : settings.ollamaModel,
+      model:
+        settings.activeProvider === 'gemini'
+          ? settings.geminiModel
+          : settings.activeProvider === 'openai'
+          ? settings.openaiModel
+          : settings.ollamaModel,
       voiceEnabled,
       videoEnabled,
       durationMinutes,
@@ -79,7 +89,7 @@ export const InterviewSetupModal: React.FC = () => {
   const popularCompanies = ['Google', 'Meta', 'Amazon', 'Microsoft', 'Netflix', 'Apple', 'Stripe', 'Uber', 'OpenAI'];
 
   return (
-    <div className="flex-1 overflow-y-auto p-8 max-w-4xl mx-auto space-y-8">
+    <div className="flex-1 overflow-y-auto p-8 max-w-4xl mx-auto space-y-8 select-none">
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-white tracking-tight">Configure Your Mock Interview</h1>
@@ -98,24 +108,27 @@ export const InterviewSetupModal: React.FC = () => {
             {[
               { id: 'coding', label: 'Coding & DSA', icon: Code, desc: 'Monaco editor + test suite' },
               { id: 'behavioral', label: 'Behavioral', icon: Users, desc: 'STAR method & leadership' },
-              { id: 'system_design', label: 'System Design', icon: Layers, desc: 'Scalability & architecture' },
-              { id: 'full_mock', label: 'Full Loop', icon: Award, desc: 'Comprehensive simulation' },
-            ].map((t) => {
-              const Icon = t.icon;
-              const isSelected = mode === t.id;
+              { id: 'system_design', label: 'System Design', icon: Layers, desc: 'Architecture whiteboard' },
+              { id: 'full_mock', label: 'Full Loop', icon: Award, desc: 'Mixed technical & behavioral' },
+            ].map((track) => {
+              const Icon = track.icon;
+              const isSelected = mode === track.id;
               return (
                 <div
-                  key={t.id}
-                  onClick={() => setMode(t.id as any)}
-                  className={`p-4 rounded-xl border cursor-pointer transition text-left space-y-1.5 ${
+                  key={track.id}
+                  onClick={() => setMode(track.id as InterviewMode)}
+                  className={`p-4 rounded-2xl border transition-all cursor-pointer relative ${
                     isSelected
-                      ? 'bg-blue-600/15 border-blue-500 text-white shadow-sm shadow-blue-500/10'
-                      : 'bg-gray-900/60 border-gray-800 text-gray-400 hover:border-gray-700 hover:text-gray-200'
+                      ? 'bg-blue-600/15 border-blue-500 shadow-lg shadow-blue-500/10'
+                      : 'bg-gray-900/60 border-gray-800 hover:border-gray-700'
                   }`}
                 >
-                  <Icon className={`w-5 h-5 ${isSelected ? 'text-blue-400' : 'text-gray-500'}`} />
-                  <p className="text-sm font-semibold">{t.label}</p>
-                  <p className="text-[11px] text-gray-500">{t.desc}</p>
+                  <div className="flex items-center justify-between mb-2">
+                    <Icon className={`w-5 h-5 ${isSelected ? 'text-blue-400' : 'text-gray-400'}`} />
+                    {isSelected && <Check className="w-4 h-4 text-blue-400" />}
+                  </div>
+                  <h3 className="text-sm font-semibold text-white">{track.label}</h3>
+                  <p className="text-[11px] text-gray-400 mt-0.5">{track.desc}</p>
                 </div>
               );
             })}
@@ -133,20 +146,20 @@ export const InterviewSetupModal: React.FC = () => {
               type="text"
               value={targetCompany}
               onChange={(e) => setTargetCompany(e.target.value)}
-              placeholder="e.g. Google, Stripe, Meta"
+              placeholder="e.g. Google, Amazon, OpenAI"
               className="w-full bg-gray-900 border border-gray-800 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500"
             />
-            {/* Quick chips */}
+            {/* Quick Chips */}
             <div className="flex flex-wrap gap-1.5 pt-1">
-              {popularCompanies.slice(0, 6).map((c) => (
+              {popularCompanies.map((c) => (
                 <button
                   key={c}
                   type="button"
                   onClick={() => setTargetCompany(c)}
-                  className={`text-[10px] px-2 py-0.5 rounded-full border transition ${
+                  className={`text-[10px] px-2 py-0.5 rounded-full border transition cursor-pointer ${
                     targetCompany === c
-                      ? 'bg-blue-500/20 text-blue-400 border-blue-500/40'
-                      : 'bg-gray-800/80 text-gray-400 border-gray-700/60 hover:text-white'
+                      ? 'bg-blue-600/20 text-blue-300 border-blue-500/40'
+                      : 'bg-gray-800/60 text-gray-400 border-gray-700/60 hover:text-white'
                   }`}
                 >
                   {c}
@@ -178,7 +191,7 @@ export const InterviewSetupModal: React.FC = () => {
                   key={lvl.id}
                   type="button"
                   onClick={() => setCandidateLevel(lvl.id as any)}
-                  className={`text-[11px] py-1 rounded-lg border font-medium transition ${
+                  className={`text-[11px] py-1 rounded-lg border font-medium transition cursor-pointer ${
                     candidateLevel === lvl.id
                       ? 'bg-indigo-600/20 text-indigo-400 border-indigo-500/40'
                       : 'bg-gray-800/60 text-gray-400 border-gray-700/60 hover:text-white'
@@ -196,9 +209,9 @@ export const InterviewSetupModal: React.FC = () => {
           <div className="space-y-2">
             <label className="text-xs font-semibold uppercase tracking-wider text-gray-400 flex items-center gap-1.5">
               <Code className="w-3.5 h-3.5" />
-              <span>Select Coding Problem</span>
+              <span>Select Coding Problem ({DSA_PROBLEMS.length} Curated Questions)</span>
             </label>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2.5">
               {DSA_PROBLEMS.map((prob) => (
                 <div
                   key={prob.id}
@@ -209,12 +222,12 @@ export const InterviewSetupModal: React.FC = () => {
                       : 'bg-gray-900/60 border-gray-800 text-gray-300 hover:border-gray-700'
                   }`}
                 >
-                  <div>
-                    <p className="text-sm font-medium">{prob.title}</p>
-                    <p className="text-xs text-gray-500">{prob.category}</p>
+                  <div className="min-w-0 pr-2">
+                    <p className="text-xs font-semibold truncate">{prob.title}</p>
+                    <p className="text-[10px] text-gray-500">{prob.category}</p>
                   </div>
                   <span
-                    className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+                    className={`text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${
                       prob.difficulty === 'Easy'
                         ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
                         : prob.difficulty === 'Medium'
@@ -239,8 +252,13 @@ export const InterviewSetupModal: React.FC = () => {
             </label>
             <label className="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1 cursor-pointer">
               <Upload className="w-3.5 h-3.5" />
-              <span>Upload .txt / .md</span>
-              <input type="file" accept=".txt,.md" onChange={handleFileUpload} className="hidden" />
+              <span>{isExtractingFile ? 'Extracting...' : 'Upload PDF / TXT / MD'}</span>
+              <input
+                type="file"
+                accept=".txt,.md,.pdf,application/pdf"
+                onChange={handleFileUpload}
+                className="hidden"
+              />
             </label>
           </div>
 
@@ -253,18 +271,33 @@ export const InterviewSetupModal: React.FC = () => {
           />
 
           {parsedResume && parsedResume.detectedSkills.length > 0 && (
-            <div className="p-3 rounded-xl bg-blue-950/20 border border-blue-900/40 space-y-1.5">
-              <div className="flex items-center gap-1.5 text-xs text-blue-400 font-medium">
-                <Sparkles className="w-3.5 h-3.5" />
-                <span>Detected Resume Profile ({parsedResume.seniorityEstimate}):</span>
+            <div className="p-3.5 rounded-xl bg-blue-950/20 border border-blue-900/40 space-y-2">
+              <div className="flex items-center justify-between text-xs text-blue-400 font-medium">
+                <div className="flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>Resume Insights ({parsedResume.seniorityEstimate} Level)</span>
+                </div>
+                <span className="text-[10px] text-gray-400">
+                  {parsedResume.detectedSkills.length} skills identified
+                </span>
               </div>
               <div className="flex flex-wrap gap-1">
                 {parsedResume.detectedSkills.map((s) => (
-                  <span key={s} className="text-[10px] px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-300 border border-blue-500/20">
+                  <span
+                    key={s}
+                    className="text-[10px] px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-300 border border-blue-500/20"
+                  >
                     {s}
                   </span>
                 ))}
               </div>
+
+              {parsedResume.keyProjects.length > 0 && (
+                <div className="pt-1 text-[11px] text-gray-400 border-t border-blue-900/30">
+                  <span className="font-semibold text-gray-300">Detected Highlight: </span>
+                  {parsedResume.keyProjects[0]}
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -274,7 +307,9 @@ export const InterviewSetupModal: React.FC = () => {
           <div
             onClick={() => setVoiceEnabled(!voiceEnabled)}
             className={`p-3.5 rounded-xl border cursor-pointer transition flex items-center gap-3 ${
-              voiceEnabled ? 'bg-blue-600/10 border-blue-500/40 text-blue-400' : 'bg-gray-900/60 border-gray-800 text-gray-500'
+              voiceEnabled
+                ? 'bg-blue-600/10 border-blue-500/40 text-blue-400'
+                : 'bg-gray-900/60 border-gray-800 text-gray-500'
             }`}
           >
             <Mic className="w-4 h-4" />
@@ -287,7 +322,9 @@ export const InterviewSetupModal: React.FC = () => {
           <div
             onClick={() => setVideoEnabled(!videoEnabled)}
             className={`p-3.5 rounded-xl border cursor-pointer transition flex items-center gap-3 ${
-              videoEnabled ? 'bg-indigo-600/10 border-indigo-500/40 text-indigo-400' : 'bg-gray-900/60 border-gray-800 text-gray-500'
+              videoEnabled
+                ? 'bg-indigo-600/10 border-indigo-500/40 text-indigo-400'
+                : 'bg-gray-900/60 border-gray-800 text-gray-500'
             }`}
           >
             <Camera className="w-4 h-4" />
@@ -305,7 +342,7 @@ export const InterviewSetupModal: React.FC = () => {
             <select
               value={durationMinutes}
               onChange={(e) => setDurationMinutes(Number(e.target.value))}
-              className="bg-gray-800 border border-gray-700 text-xs text-white rounded-lg px-2 py-1 focus:outline-none"
+              className="bg-gray-800 border border-gray-700 text-xs text-white rounded-lg px-2 py-1 focus:outline-none cursor-pointer"
             >
               <option value={15}>15 min</option>
               <option value={30}>30 min</option>
@@ -354,4 +391,3 @@ export const InterviewSetupModal: React.FC = () => {
     </div>
   );
 };
-

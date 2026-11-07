@@ -124,3 +124,4 @@ function mapAuthError(codeOrMsg: string): string {
   if (codeOrMsg.includes('auth/operation-not-allowed')) return 'This sign-in provider is not enabled in Firebase Console.';
   return codeOrMsg || 'Authentication failed. Please try again.';
 }
+

@@ -61,6 +61,8 @@ interface InterviewState {
   // Past Sessions & Scorecards
   sessionHistory: InterviewSession[];
   loadSession: (sessionId: string) => void;
+  deleteSession: (sessionId: string) => void;
+  clearAllHistory: () => void;
 
   // AI Service instance
   aiService: AIService;
@@ -216,7 +218,6 @@ export const useInterviewStore = create<InterviewState>((set, get) => {
           };
           return { messages: msgs };
         } else {
-          // If no interviewer message yet, create it
           msgs.push({
             id: 'msg-' + Date.now(),
             role: 'interviewer',
@@ -280,7 +281,23 @@ export const useInterviewStore = create<InterviewState>((set, get) => {
       }
     },
 
+    deleteSession: (sessionId) => {
+      set((state) => {
+        const updated = state.sessionHistory.filter((s) => s.id !== sessionId);
+        try {
+          localStorage.setItem(SESSIONS_STORAGE_KEY, JSON.stringify(updated));
+        } catch {}
+        return { sessionHistory: updated };
+      });
+    },
+
+    clearAllHistory: () => {
+      try {
+        localStorage.removeItem(SESSIONS_STORAGE_KEY);
+      } catch {}
+      set({ sessionHistory: [] });
+    },
+
     aiService,
   };
 });
-

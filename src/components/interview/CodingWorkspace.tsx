@@ -8,6 +8,9 @@ import {
   Clock,
   Terminal,
   RotateCcw,
+  BookOpen,
+  Code2,
+  ChevronDown,
 } from 'lucide-react';
 import { DSAProblem, ExecutionResult } from '../../types/code';
 import { DSA_PROBLEMS } from '../../data/dsaProblems';
@@ -15,7 +18,7 @@ import { codeRunnerService } from '../../services/codeRunner';
 import { useInterviewStore } from '../../store/interviewStore';
 
 type SupportedLanguage = 'javascript' | 'typescript' | 'python';
-type WorkspaceTab = 'problem' | 'testcases' | 'console';
+type WorkspaceTab = 'problem' | 'testcases' | 'console' | 'solution';
 
 export interface CodingWorkspaceProps {
   problemId?: string;
@@ -25,8 +28,10 @@ export interface CodingWorkspaceProps {
 const ENTRYPOINT_MAP: Record<string, string> = {
   'two-sum': 'twoSum',
   'valid-parentheses': 'isValid',
+  'longest-substring': 'lengthOfLongestSubstring',
   'lru-cache': 'LRUCache',
   'merge-intervals': 'merge',
+  'coin-change': 'coinChange',
 };
 
 export const CodingWorkspace: React.FC<CodingWorkspaceProps> = ({
@@ -38,8 +43,10 @@ export const CodingWorkspace: React.FC<CodingWorkspaceProps> = ({
     setCodeSnippet,
     selectedLanguage,
     setSelectedLanguage,
+    setActiveProblemId,
   } = useInterviewStore();
 
+  const [currentProblemId, setCurrentProblemId] = useState<string>(problemId);
   const [problem, setProblem] = useState<DSAProblem>(
     () => DSA_PROBLEMS.find((p) => p.id === problemId) || DSA_PROBLEMS[0]
   );
@@ -49,11 +56,12 @@ export const CodingWorkspace: React.FC<CodingWorkspaceProps> = ({
   const [activeTab, setActiveTab] = useState<WorkspaceTab>('problem');
 
   const prevProblemIdRef = useRef<string | null>(null);
-  const runCodeRef = useRef<() => void>(() => { });
+  const runCodeRef = useRef<() => void>(() => {});
 
-  // Sync problem and starter code when problemId changes
+  // Sync problem and starter code when currentProblemId or problemId changes
   useEffect(() => {
-    const found = DSA_PROBLEMS.find((p) => p.id === problemId) || DSA_PROBLEMS[0];
+    const targetId = currentProblemId || problemId;
+    const found = DSA_PROBLEMS.find((p) => p.id === targetId) || DSA_PROBLEMS[0];
     setProblem(found);
 
     const isProblemChanged = prevProblemIdRef.current !== found.id;
@@ -73,7 +81,12 @@ export const CodingWorkspace: React.FC<CodingWorkspaceProps> = ({
         found.starterCode.javascript;
       setCodeSnippet(starter);
     }
-  }, [problemId, selectedLanguage, codeSnippet, setCodeSnippet]);
+  }, [currentProblemId, problemId, selectedLanguage, codeSnippet, setCodeSnippet]);
+
+  const handleSelectProblem = (id: string) => {
+    setCurrentProblemId(id);
+    setActiveProblemId(id);
+  };
 
   const handleLanguageChange = (lang: SupportedLanguage) => {
     setSelectedLanguage(lang);
@@ -87,6 +100,18 @@ export const CodingWorkspace: React.FC<CodingWorkspaceProps> = ({
       problem.starterCode.javascript;
     setCodeSnippet(starter);
     setExecutionResult(null);
+  };
+
+  const handleLoadSolution = () => {
+    if (problem.solutionCode) {
+      const sol =
+        problem.solutionCode[selectedLanguage as SupportedLanguage] ||
+        problem.solutionCode.javascript ||
+        '';
+      if (sol) {
+        setCodeSnippet(sol);
+      }
+    }
   };
 
   const handleRunCode = useCallback(async () => {
@@ -143,40 +168,56 @@ export const CodingWorkspace: React.FC<CodingWorkspaceProps> = ({
     problem.difficulty === 'Easy'
       ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
       : problem.difficulty === 'Medium'
-        ? 'bg-amber-500/10 text-amber-400 border-amber-500/20'
-        : 'bg-red-500/10 text-red-400 border-red-500/20';
+      ? 'bg-amber-500/10 text-amber-400 border-amber-500/20'
+      : 'bg-red-500/10 text-red-400 border-red-500/20';
 
   return (
     <div className="flex-1 flex flex-col h-full bg-gray-950 rounded-2xl border border-gray-800 overflow-hidden shadow-2xl">
       {/* Top Workspace Toolbar */}
       <div className="h-12 border-b border-gray-800 bg-gray-900/90 px-4 flex items-center justify-between gap-2 select-none shrink-0">
         <div className="flex items-center gap-3">
-          {/* Tab switcher: Problem vs Tests vs Console */}
+          {/* Problem Selector Dropdown */}
+          <div className="relative">
+            <select
+              value={problem.id}
+              onChange={(e) => handleSelectProblem(e.target.value)}
+              className="bg-gray-800 border border-gray-700 text-xs font-semibold text-white rounded-lg px-2.5 py-1 pr-6 focus:outline-none focus:border-blue-500 cursor-pointer appearance-none"
+            >
+              {DSA_PROBLEMS.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.title} ({p.difficulty})
+                </option>
+              ))}
+            </select>
+            <ChevronDown className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400" />
+          </div>
+
+          {/* Tab switcher: Problem vs Tests vs Console vs Solution */}
           <div className="flex items-center bg-gray-800 rounded-lg p-0.5 border border-gray-700/60">
             {(
               [
-                { id: 'problem', label: 'Description' },
-                { id: 'testcases', label: 'Test Cases' },
-                { id: 'console', label: 'Console Output' },
+                { id: 'problem', label: 'Problem' },
+                { id: 'testcases', label: 'Tests' },
+                { id: 'console', label: 'Console' },
+                { id: 'solution', label: 'Solution' },
               ] as { id: WorkspaceTab; label: string }[]
             ).map((tab) => (
               <button
                 key={tab.id}
                 type="button"
                 onClick={() => setActiveTab(tab.id)}
-                className={`px-3 py-1 rounded-md text-xs font-medium transition cursor-pointer ${activeTab === tab.id
+                className={`px-2.5 py-1 rounded-md text-xs font-medium transition cursor-pointer ${
+                  activeTab === tab.id
                     ? 'bg-blue-600 text-white shadow-sm'
                     : 'text-gray-400 hover:text-white'
-                  }`}
+                }`}
               >
                 {tab.label}
               </button>
             ))}
           </div>
 
-          <span
-            className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${difficultyBadgeClass}`}
-          >
+          <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${difficultyBadgeClass}`}>
             {problem.difficulty}
           </span>
         </div>
@@ -235,7 +276,7 @@ export const CodingWorkspace: React.FC<CodingWorkspaceProps> = ({
 
       {/* Main Split Body: Left Details & Right Monaco Editor */}
       <div className="flex-1 grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-gray-800 overflow-hidden min-h-0">
-        {/* Left Side: Problem Statement / Tests / Console */}
+        {/* Left Side: Problem Statement / Tests / Console / Solution */}
         <div className="h-full overflow-y-auto p-5 space-y-4 bg-gray-900/40 text-xs text-gray-300">
           {activeTab === 'problem' && (
             <div className="space-y-4">
@@ -279,6 +320,12 @@ export const CodingWorkspace: React.FC<CodingWorkspaceProps> = ({
                 </ul>
               </div>
 
+              {/* Complexity Target */}
+              <div className="p-3 rounded-xl bg-blue-950/20 border border-blue-500/30 text-blue-300 flex items-center justify-between font-mono text-[11px]">
+                <span>Target Time: <strong>{problem.optimalComplexity.time}</strong></span>
+                <span>Target Space: <strong>{problem.optimalComplexity.space}</strong></span>
+              </div>
+
               {/* Revealed Hints */}
               {revealedHints > 0 && (
                 <div className="space-y-2 pt-2">
@@ -310,8 +357,9 @@ export const CodingWorkspace: React.FC<CodingWorkspaceProps> = ({
                       <span>{executionResult.runtimeMs}ms</span>
                     </span>
                     <span
-                      className={`font-semibold ${executionResult.passed ? 'text-emerald-400' : 'text-red-400'
-                        }`}
+                      className={`font-semibold ${
+                        executionResult.passed ? 'text-emerald-400' : 'text-red-400'
+                      }`}
                     >
                       {executionResult.passedTests} / {executionResult.totalTests} Passed
                     </span>
@@ -331,23 +379,24 @@ export const CodingWorkspace: React.FC<CodingWorkspaceProps> = ({
                   executionResult?.testResults?.length
                     ? executionResult.testResults
                     : problem.testCases.map((tc) => ({
-                      testCaseId: tc.id,
-                      passed: false,
-                      input: tc.input,
-                      expected: tc.expectedOutput,
-                      actual: 'Not yet executed',
-                    }))
+                        testCaseId: tc.id,
+                        passed: false,
+                        input: tc.input,
+                        expected: tc.expectedOutput,
+                        actual: 'Not yet executed',
+                      }))
                 ).map((tc, idx) => {
                   const isPending = tc.actual === 'Not yet executed';
                   return (
                     <div
                       key={tc.testCaseId || idx}
-                      className={`p-3 rounded-xl border font-mono space-y-1.5 select-text ${isPending
+                      className={`p-3 rounded-xl border font-mono space-y-1.5 select-text ${
+                        isPending
                           ? 'bg-gray-900 border-gray-800'
                           : tc.passed
-                            ? 'bg-emerald-950/20 border-emerald-500/30'
-                            : 'bg-red-950/20 border-red-500/30'
-                        }`}
+                          ? 'bg-emerald-950/20 border-emerald-500/30'
+                          : 'bg-red-950/20 border-red-500/30'
+                      }`}
                     >
                       <div className="flex items-center justify-between">
                         <span className="font-semibold text-gray-300">Case {idx + 1}</span>
@@ -399,6 +448,36 @@ export const CodingWorkspace: React.FC<CodingWorkspaceProps> = ({
               </div>
             </div>
           )}
+
+          {activeTab === 'solution' && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <BookOpen className="w-4 h-4 text-purple-400" />
+                  <h3 className="font-semibold text-white">Optimal Reference Solution</h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleLoadSolution}
+                  className="px-2.5 py-1 rounded-lg bg-purple-600/20 border border-purple-500/30 text-purple-300 hover:bg-purple-600/30 text-xs font-medium transition cursor-pointer"
+                >
+                  Insert into Editor
+                </button>
+              </div>
+
+              <div className="p-3 rounded-xl bg-gray-900 border border-gray-800 font-mono text-xs text-gray-200 overflow-x-auto select-text whitespace-pre">
+                {problem.solutionCode?.[selectedLanguage as SupportedLanguage] ||
+                  problem.solutionCode?.javascript ||
+                  '// Solution coming soon'}
+              </div>
+
+              <div className="p-3 rounded-xl bg-purple-950/20 border border-purple-500/20 text-xs text-purple-200 space-y-1">
+                <p className="font-semibold text-purple-300">Complexity Analysis:</p>
+                <p>Time: {problem.optimalComplexity.time}</p>
+                <p>Space: {problem.optimalComplexity.space}</p>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Right Side: Monaco Code Editor */}
@@ -409,8 +488,8 @@ export const CodingWorkspace: React.FC<CodingWorkspaceProps> = ({
               selectedLanguage === 'python'
                 ? 'python'
                 : selectedLanguage === 'typescript'
-                  ? 'typescript'
-                  : 'javascript'
+                ? 'typescript'
+                : 'javascript'
             }
             theme="vs-dark"
             value={codeSnippet}

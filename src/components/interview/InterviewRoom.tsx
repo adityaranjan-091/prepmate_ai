@@ -21,6 +21,7 @@ import { AIInterviewerAvatar } from './AIInterviewerAvatar';
 import { WebcamMonitor } from './WebcamMonitor';
 import { CodingWorkspace } from './CodingWorkspace';
 import { BehavioralHelper } from './BehavioralHelper';
+import { SystemDesignWorkspace } from './SystemDesignWorkspace';
 import { speechService } from '../../services/speechService';
 import { ChatMessage } from '../../types/interview';
 
@@ -262,13 +263,6 @@ export const InterviewRoom: React.FC = () => {
   const showTypingIndicator =
     isAIStreaming && (messages.length === 0 || messages[messages.length - 1]?.role === 'candidate');
 
-  const designSteps = [
-    'Requirements',
-    'Estimations',
-    'Data Model',
-    'High-Level Diagram',
-    'Deep Dives',
-  ];
 
   return (
     <div className="flex-1 flex flex-col h-full overflow-hidden p-3 sm:p-4 gap-3 sm:gap-4 bg-gradient-to-b from-gray-950 to-black">
@@ -573,51 +567,7 @@ export const InterviewRoom: React.FC = () => {
 
           {activeWorkspaceMode === 'behavioral' && <BehavioralHelper />}
 
-          {activeWorkspaceMode === 'system_design' && (
-            <div className="flex-1 flex flex-col min-h-0 bg-gray-950 rounded-2xl border border-gray-800 shadow-2xl shadow-black/40 overflow-hidden">
-              {/* Panel header */}
-              <div className="shrink-0 px-6 pt-5 pb-4 border-b border-gray-800 bg-gray-900/40 space-y-3">
-                <div className="flex items-center gap-3">
-                  <span className="grid place-items-center w-9 h-9 rounded-xl bg-indigo-500/10 border border-indigo-500/20">
-                    <Layers className="w-4 h-4 text-indigo-400" />
-                  </span>
-                  <div>
-                    <h2 className="text-base font-bold text-white leading-tight">
-                      System Design Architecture Whiteboard
-                    </h2>
-                    <p className="text-[11px] text-gray-500 mt-0.5">
-                      Structure your thinking before walking the interviewer through it.
-                    </p>
-                  </div>
-                </div>
-
-                {/* Step chips */}
-                <ol className="flex flex-wrap items-center gap-1.5">
-                  {designSteps.map((step, i) => (
-                    <li
-                      key={step}
-                      className="flex items-center gap-1.5 pl-1.5 pr-2.5 py-1 rounded-full bg-gray-900 border border-gray-800 text-[11px] text-gray-300"
-                    >
-                      <span className="grid place-items-center w-4 h-4 rounded-full bg-blue-600/20 text-blue-300 text-[9px] font-bold">
-                        {i + 1}
-                      </span>
-                      {step}
-                    </li>
-                  ))}
-                </ol>
-              </div>
-
-              {/* Notes area */}
-              <div className="flex-1 min-h-0 p-4">
-                <textarea
-                  placeholder="Sketch your architecture notes, database schemas, and service boundaries here..."
-                  aria-label="System design notes"
-                  spellCheck={false}
-                  className="w-full h-full bg-gray-900/70 border border-gray-800 hover:border-gray-700 rounded-xl p-4 text-xs font-mono text-gray-200 placeholder:text-gray-600 transition-colors focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 resize-none leading-relaxed [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-gray-800 [&::-webkit-scrollbar-thumb]:rounded-full"
-                />
-              </div>
-            </div>
-          )}
+          {activeWorkspaceMode === 'system_design' && <SystemDesignWorkspace />}
         </section>
       </div>
     </div>
