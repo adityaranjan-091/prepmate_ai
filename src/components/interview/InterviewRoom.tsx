@@ -33,6 +33,7 @@ import { BehavioralHelper } from './BehavioralHelper';
 import { SystemDesignWorkspace } from './SystemDesignWorkspace';
 import { speechService } from '../../services/speechService';
 import { ChatMessage } from '../../types/interview';
+import { LiveMeetingStage } from './LiveMeetingStage';
 
 type LayoutMode = 'split' | 'workspace' | 'dialogue';
 type WorkspaceMode = 'coding' | 'behavioral' | 'system_design';
@@ -402,7 +403,12 @@ export const InterviewRoom: React.FC = () => {
         >
           {/* Top Video Stage / Compact Dock */}
           <div className="shrink-0">
-            {compactVideo ? (
+            {currentSession?.config.meetingType && currentSession.config.meetingType !== 'ai' && currentSession.config.roomCode ? (
+              <LiveMeetingStage
+                roomCode={currentSession.config.roomCode}
+                compact={compactVideo}
+              />
+            ) : compactVideo ? (
               <div className="flex flex-col sm:flex-row gap-2">
                 <AIInterviewerAvatar
                   isSpeaking={isSpeaking}

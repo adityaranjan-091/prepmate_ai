@@ -1,6 +1,7 @@
 import React from 'react';
 import { Header } from './components/layout/Header';
 import { Sidebar } from './components/layout/Sidebar';
+import { Footer } from './components/layout/Footer';
 import { DashboardView } from './components/dashboard/DashboardView';
 import { InterviewSetupModal } from './components/setup/InterviewSetupModal';
 import { InterviewRoom } from './components/interview/InterviewRoom';
@@ -34,6 +35,9 @@ export function App() {
             {activeTab === 'settings' && <SettingsModal />}
           </main>
         </div>
+
+        {/* Bottom Platform Status & Navigation Footer */}
+        <Footer />
       </div>
     </AuthGuard>
   );

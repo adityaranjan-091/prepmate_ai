@@ -1,0 +1,28 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    match /meetingRooms/{roomId} {
+      allow read, create, update: if signedIn();
+      allow delete: if signedIn();
+
+      match /participants/{participantId} {
+        allow read: if signedIn();
+        allow create, update: if signedIn() && request.auth.uid == participantId;
+        allow delete: if signedIn() && request.auth.uid == participantId;
+      }
+
+      match /signals/{signalId} {
+        allow read: if signedIn();
+        allow create: if signedIn()
+          && request.resource.data.from == request.auth.uid
+          && exists(/databases/$(database)/documents/meetingRooms/$(roomId)/participants/$(request.auth.uid));
+        allow delete: if signedIn()
+          && (resource.data.to == request.auth.uid || resource.data.from == request.auth.uid);
+      }
+    }
+  }
+}

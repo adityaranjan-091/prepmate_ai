@@ -7,7 +7,7 @@ export type CandidateLevel = 'entry' | 'mid' | 'senior' | 'staff_principal';
 
 export interface InterviewConfig {
   mode: InterviewMode;
-  meetingType: MeetingType;
+  meetingType?: MeetingType;
   roomCode?: string;
   targetRole: string;
   targetCompany: string;

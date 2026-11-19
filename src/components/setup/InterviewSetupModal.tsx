@@ -68,7 +68,7 @@ export const InterviewSetupModal: React.FC = () => {
     const resolvedRoomCode =
       meetingType === 'ai'
         ? undefined
-        : (roomCode.trim().toUpperCase() || Math.random().toString(36).slice(2, 8).toUpper()),
+        : (roomCode.trim().toUpperCase() || Math.random().toString(36).slice(2, 8).toUpperCase());
     const config: InterviewConfig = {
       mode,
       meetingType,
@@ -107,6 +107,54 @@ export const InterviewSetupModal: React.FC = () => {
       </div>
 
       <div className="space-y-6">
+        <div className="space-y-3">
+          <label className="text-xs font-semibold uppercase tracking-wider text-gray-400">
+            Interview Type
+          </label>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            {[
+              { id: 'ai' as const, label: 'AI Interview', desc: 'Practice alone with the AI interviewer' },
+              { id: 'one_to_one' as const, label: 'One-to-One', desc: 'Invite a recruiter or interviewer' },
+              { id: 'room' as const, label: 'Interview Room', desc: 'Create or join a shared interview room' },
+            ].map((type) => (
+              <button
+                key={type.id}
+                type="button"
+                onClick={() => setMeetingType(type.id)}
+                className={`text-left p-4 rounded-2xl border transition-all ${
+                  meetingType === type.id
+                    ? 'bg-blue-600/15 border-blue-500'
+                    : 'bg-gray-900/60 border-gray-800 hover:border-gray-700'
+                }`}
+              >
+                <p className="text-sm font-semibold text-white">{type.label}</p>
+                <p className="text-[11px] text-gray-400 mt-1">{type.desc}</p>
+              </button>
+            ))}
+          </div>
+
+          {meetingType !== 'ai' && (
+            <div className="flex items-center gap-2 p-3 rounded-xl bg-gray-900/60 border border-gray-800">
+              <input
+                type="text"
+                value={roomCode}
+                onChange={(e) => setRoomCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 12))}
+                placeholder={meetingType === 'room' ? 'Enter room code or leave blank to create' : 'Invite room code (optional)'}
+                className="flex-1 bg-gray-950 border border-gray-800 rounded-lg px-3 py-2 text-sm text-white uppercase focus:outline-none focus:border-blue-500"
+              />
+              {meetingType === 'room' && (
+                <button
+                  type="button"
+                  onClick={() => setRoomCode(Math.random().toString(36).slice(2, 8).toUpperCase())}
+                  className="px-3 py-2 rounded-lg bg-gray-800 border border-gray-700 text-xs text-gray-200 hover:text-white"
+                >
+                  Generate code
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+
         {/* Track Selection */}
         <div className="space-y-3">
           <label className="text-xs font-semibold uppercase tracking-wider text-gray-400">
