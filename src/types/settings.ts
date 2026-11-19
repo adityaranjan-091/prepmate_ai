@@ -5,8 +5,6 @@ export interface AppSettings {
   activeProvider: AIProvider;
   geminiApiKey: string;
   geminiModel: string;
-  openaiApiKey: string;
-  openaiModel: string;
   groqApiKey: string;
   groqModel: string;
   ollamaBaseUrl: string;
@@ -39,11 +37,6 @@ export const DEFAULT_SETTINGS: AppSettings = {
       (import.meta.env?.VITE_GEMINI_API_KEY || import.meta.env?.GEMINI_API_KEY)) ||
     '',
   geminiModel: 'gemini-1.5-flash',
-  openaiApiKey:
-    (typeof import.meta !== 'undefined' &&
-      (import.meta.env?.VITE_OPENAI_API_KEY || import.meta.env?.OPENAI_API_KEY)) ||
-    '',
-  openaiModel: 'gpt-4o-mini',
   groqApiKey:
     (typeof import.meta !== 'undefined' &&
       (import.meta.env?.VITE_GROQ_API_KEY || import.meta.env?.GROQ_API_KEY)) ||

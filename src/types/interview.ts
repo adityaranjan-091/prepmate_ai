@@ -1,6 +1,6 @@
 export type InterviewMode = 'coding' | 'behavioral' | 'system_design' | 'full_mock';
 
-export type AIProvider = 'gemini' | 'openai' | 'groq' | 'ollama';
+export type AIProvider = 'gemini' | 'groq' | 'ollama';
 
 export type CandidateLevel = 'entry' | 'mid' | 'senior' | 'staff_principal';
 

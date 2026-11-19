@@ -15,7 +15,7 @@ export function App() {
 
   return (
     <AuthGuard>
-      <div className="flex flex-col h-screen w-screen bg-[#0b0f19] text-gray-100 overflow-hidden font-sans antialiased selection:bg-blue-600 selection:text-white">
+      <div className="flex flex-col h-screen w-screen bg-[#090a0d] text-gray-100 overflow-hidden font-sans antialiased selection:bg-blue-600 selection:text-white">
         {/* Top Header */}
         <Header />
 

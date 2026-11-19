@@ -94,7 +94,6 @@ CRITICAL CONVERSATIONAL GUIDELINES:
     const activeProvider = (config?.provider || this.settings.activeProvider || 'gemini') as AIProvider;
     const targetModel = config?.model || (
       activeProvider === 'gemini' ? this.settings.geminiModel :
-      activeProvider === 'openai' ? this.settings.openaiModel :
       activeProvider === 'groq' ? this.settings.groqModel :
       this.settings.ollamaModel
     );
@@ -115,8 +114,7 @@ CRITICAL CONVERSATIONAL GUIDELINES:
     try {
       if (activeProvider === 'gemini') {
         await this.streamGemini(systemPrompt, conversation, callbacks, targetModel);
-      } else if (activeProvider === 'openai') {
-        await this.streamOpenAI(systemPrompt, conversation, callbacks);
+      
       } else if (activeProvider === 'groq') {
         await this.streamGroq(systemPrompt, conversation, callbacks);
       } else if (activeProvider === 'ollama') {
@@ -290,26 +288,7 @@ Evaluate the candidate and return STRICTLY a valid JSON object matching this sch
     return '';
   }
 
-  public getOpenAIApiKey(): string {
-    const fromSettings = this.settings.openaiApiKey?.trim();
-    if (fromSettings) return fromSettings;
-
-    try {
-      if (typeof window !== 'undefined' && window.localStorage) {
-        const stored = localStorage.getItem('prepmate_settings_v1') || localStorage.getItem('intervai_settings_v1');
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          if (parsed?.openaiApiKey?.trim()) return parsed.openaiApiKey.trim();
-        }
-      }
-    } catch {}
-
-    if (typeof import.meta !== 'undefined' && import.meta.env) {
-      const envKey = (import.meta.env.VITE_OPENAI_API_KEY || import.meta.env.OPENAI_API_KEY) as string | undefined;
-      if (envKey?.trim()) return envKey.trim();
-    }
-    return '';
-  }
+  
 
   public getGroqApiKey(): string {
     const fromSettings = this.settings.groqApiKey?.trim();
@@ -389,17 +368,17 @@ Evaluate the candidate and return STRICTLY a valid JSON object matching this sch
       }
     }
 
-    const openAIKey = this.getOpenAIApiKey();
-    if (openAIKey) {
+    const groqKey = this.getGroqApiKey();
+    if (groqKey) {
       try {
-        const res = await fetch('https://api.openai.com/v1/chat/completions', {
+        const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${openAIKey}`,
+            Authorization: `Bearer ${groqKey}`,
           },
           body: JSON.stringify({
-            model: this.settings.openaiModel || 'gpt-4o-mini',
+            model: this.settings.groqModel || 'llama-3.3-70b-versatile',
             messages: [{ role: 'user', content: prompt }],
             response_format: { type: 'json_object' },
           }),
@@ -409,7 +388,7 @@ Evaluate the candidate and return STRICTLY a valid JSON object matching this sch
           return data?.choices?.[0]?.message?.content || '{}';
         }
       } catch (err) {
-        console.warn('OpenAI generateText network error:', err);
+        console.warn('Groq generateText network error:', err);
       }
     }
 
@@ -706,32 +685,7 @@ Evaluate the candidate and return STRICTLY a valid JSON object matching this sch
     return false;
   }
 
-  private async streamOpenAI(systemPrompt: string, history: { role: string; content: string }[], callbacks: StreamCallbacks) {
-    const apiKey = this.getOpenAIApiKey();
-    if (!apiKey) throw new Error('OpenAI API Key is missing. Please add it in Settings.');
-
-    const res = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model: this.settings.openaiModel || 'gpt-4o-mini',
-        messages: [{ role: 'system', content: systemPrompt }, ...history],
-        stream: true,
-        temperature: 0.7,
-        max_tokens: 400,
-      }),
-    });
-
-    if (!res.ok) {
-      const errText = await res.text();
-      throw new Error(`OpenAI API Error (${res.status}): ${errText}`);
-    }
-
-    await this.processSSE(res, callbacks);
-  }
+  
 
   private async streamGroq(systemPrompt: string, history: { role: string; content: string }[], callbacks: StreamCallbacks) {
     const apiKey = this.getGroqApiKey();
@@ -905,20 +859,6 @@ Evaluate the candidate and return STRICTLY a valid JSON object matching this sch
         }
       }
       return { ok: false, message: `Gemini Error: ${lastError}` };
-    }
-
-    if (provider === 'openai') {
-      const apiKey = this.getOpenAIApiKey();
-      if (!apiKey) return { ok: false, message: 'OpenAI API key is missing.' };
-      try {
-        const res = await fetch('https://api.openai.com/v1/models', {
-          headers: { Authorization: `Bearer ${apiKey}` },
-        });
-        if (!res.ok) return { ok: false, message: `OpenAI error: HTTP ${res.status}` };
-        return { ok: true, message: 'Connected to OpenAI successfully!' };
-      } catch (err: any) {
-        return { ok: false, message: err.message };
-      }
     }
 
     if (provider === 'groq') {

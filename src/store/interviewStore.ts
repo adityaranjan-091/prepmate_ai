@@ -79,8 +79,8 @@ const loadSavedSettings = (): AppSettings => {
     return {
       ...DEFAULT_SETTINGS,
       ...parsed,
+      activeProvider: parsed.activeProvider === 'openai' ? 'gemini' : (parsed.activeProvider || DEFAULT_SETTINGS.activeProvider),
       geminiApiKey: parsed.geminiApiKey?.trim() || DEFAULT_SETTINGS.geminiApiKey,
-      openaiApiKey: parsed.openaiApiKey?.trim() || DEFAULT_SETTINGS.openaiApiKey,
       groqApiKey: parsed.groqApiKey?.trim() || DEFAULT_SETTINGS.groqApiKey,
     };
   } catch {
@@ -110,7 +110,6 @@ export const useInterviewStore = create<InterviewState>((set, get) => {
       set((state) => {
         const sanitized = { ...newSettings };
         if (typeof sanitized.geminiApiKey === 'string') sanitized.geminiApiKey = sanitized.geminiApiKey.trim();
-        if (typeof sanitized.openaiApiKey === 'string') sanitized.openaiApiKey = sanitized.openaiApiKey.trim();
         if (typeof sanitized.groqApiKey === 'string') sanitized.groqApiKey = sanitized.groqApiKey.trim();
         const merged = { ...state.settings, ...sanitized };
         try {

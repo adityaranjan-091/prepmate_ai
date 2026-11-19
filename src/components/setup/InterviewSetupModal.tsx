@@ -75,8 +75,8 @@ export const InterviewSetupModal: React.FC = () => {
       model:
         settings.activeProvider === 'gemini'
           ? settings.geminiModel
-          : settings.activeProvider === 'openai'
-          ? settings.openaiModel
+          : settings.activeProvider === 'groq'
+          ? settings.groqModel
           : settings.ollamaModel,
       voiceEnabled,
       videoEnabled,
@@ -353,7 +353,6 @@ export const InterviewSetupModal: React.FC = () => {
 
         {/* Key Missing Alert */}
         {((settings.activeProvider === 'gemini' && !aiService.getGeminiApiKey()) ||
-          (settings.activeProvider === 'openai' && !aiService.getOpenAIApiKey()) ||
           (settings.activeProvider === 'groq' && !aiService.getGroqApiKey())) && (
           <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-between gap-3 text-xs text-amber-300">
             <div className="flex items-center gap-2">
@@ -361,8 +360,6 @@ export const InterviewSetupModal: React.FC = () => {
               <span>
                 {settings.activeProvider === 'gemini'
                   ? 'Google Gemini'
-                  : settings.activeProvider === 'openai'
-                  ? 'OpenAI'
                   : 'Groq'}{' '}
                 API key is not configured.
               </span>

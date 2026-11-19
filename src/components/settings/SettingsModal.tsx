@@ -110,10 +110,9 @@ export const SettingsModal: React.FC = () => {
           </div>
 
           {/* Provider selector radio cards */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {[
               { id: 'gemini', name: 'Google Gemini', desc: 'Fast, multimodal, free tier' },
-              { id: 'openai', name: 'OpenAI GPT-4o', desc: 'Industry standard reasoning' },
               { id: 'groq', name: 'Groq (Llama 3.3)', desc: 'Ultra low-latency speech' },
               { id: 'ollama', name: 'Ollama (Local)', desc: '100% offline & private' },
             ].map((p) => (
@@ -213,76 +212,6 @@ export const SettingsModal: React.FC = () => {
                   <span className="flex items-center gap-1 text-xs text-red-400 font-medium">
                     <AlertCircle className="w-3.5 h-3.5 shrink-0" />
                     <span>{testState.gemini.message}</span>
-                  </span>
-                )}
-              </div>
-            </div>
-          )}
-
-          {form.activeProvider === 'openai' && (
-            <div className="space-y-3 pt-2">
-              <div className="space-y-1">
-                <label className="text-xs font-medium text-gray-300">OpenAI API Key</label>
-                <div className="relative flex items-center">
-                  <input
-                    type={showKey.openai ? 'text' : 'password'}
-                    value={form.openaiApiKey}
-                    onChange={(e) => setForm({ ...form, openaiApiKey: e.target.value })}
-                    placeholder="sk-..."
-                    className="w-full bg-gray-950 border border-gray-800 rounded-xl pl-3 pr-10 py-2 text-xs text-white focus:outline-none focus:border-blue-500 font-mono"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowKey((prev) => ({ ...prev, openai: !prev.openai }))}
-                    className="absolute right-3 text-gray-400 hover:text-gray-200 cursor-pointer"
-                  >
-                    {showKey.openai ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-medium text-gray-300">Model</label>
-                <select
-                  value={form.openaiModel}
-                  onChange={(e) => setForm({ ...form, openaiModel: e.target.value })}
-                  className="w-full bg-gray-950 border border-gray-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none"
-                >
-                  <option value="gpt-4o-mini">GPT-4o Mini (Fast & Cost Effective)</option>
-                  <option value="gpt-4o">GPT-4o (Flagship Multimodal)</option>
-                </select>
-              </div>
-
-              <div className="flex flex-wrap items-center gap-3 pt-1">
-                <button
-                  type="button"
-                  onClick={() => handleTestCloudProvider('openai')}
-                  disabled={testState.openai?.status === 'testing'}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-200 text-xs font-medium border border-gray-700 cursor-pointer disabled:opacity-50 transition"
-                >
-                  {testState.openai?.status === 'testing' ? (
-                    <>
-                      <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-400" />
-                      <span>Testing OpenAI Key...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="w-3.5 h-3.5 text-blue-400" />
-                      <span>Test OpenAI Connection</span>
-                    </>
-                  )}
-                </button>
-
-                {testState.openai?.status === 'success' && (
-                  <span className="flex items-center gap-1 text-xs text-emerald-400 font-medium">
-                    <Check className="w-3.5 h-3.5" />
-                    <span>{testState.openai.message}</span>
-                  </span>
-                )}
-                {testState.openai?.status === 'error' && (
-                  <span className="flex items-center gap-1 text-xs text-red-400 font-medium">
-                    <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                    <span>{testState.openai.message}</span>
                   </span>
                 )}
               </div>
