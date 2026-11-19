@@ -17,7 +17,7 @@ import {
   HelpCircle,
 } from 'lucide-react';
 import { useInterviewStore } from '../../store/interviewStore';
-import { InterviewConfig, InterviewMode, CandidateLevel } from '../../types/interview';
+import { InterviewConfig, InterviewMode, CandidateLevel, MeetingType } from '../../types/interview';
 import { resumeParserService, ParsedResume } from '../../services/resumeParser';
 import { DSA_PROBLEMS } from '../../data/dsaProblems';
 
@@ -25,6 +25,8 @@ export const InterviewSetupModal: React.FC = () => {
   const { startSession, settings, setActiveTab, aiService } = useInterviewStore();
 
   const [mode, setMode] = useState<InterviewMode>('coding');
+  const [meetingType, setMeetingType] = useState<MeetingType>('ai');
+  const [roomCode, setRoomCode] = useState('');
   const [targetRole, setTargetRole] = useState('Senior Software Engineer');
   const [targetCompany, setTargetCompany] = useState('Google');
   const [candidateLevel, setCandidateLevel] = useState<CandidateLevel>('senior');
@@ -63,8 +65,14 @@ export const InterviewSetupModal: React.FC = () => {
   };
 
   const handleLaunch = () => {
+    const resolvedRoomCode =
+      meetingType === 'ai'
+        ? undefined
+        : (roomCode.trim().toUpperCase() || Math.random().toString(36).slice(2, 8).toUpper()),
     const config: InterviewConfig = {
       mode,
+      meetingType,
+      roomCode: resolvedRoomCode,
       targetRole,
       targetCompany,
       candidateLevel,

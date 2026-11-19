@@ -7,6 +7,7 @@ export interface AIInterviewerAvatarProps {
   isAIStreaming: boolean;
   companyName?: string;
   interviewerRole?: string;
+  compact?: boolean;
 }
 
 const WAVEFORM_BARS = [24, 48, 82, 60, 95, 72, 42, 88, 56, 34, 90, 66, 46, 78, 36];
@@ -19,6 +20,7 @@ export const AIInterviewerAvatar: React.FC<AIInterviewerAvatarProps> = ({
   isAIStreaming,
   companyName = 'Top Tech',
   interviewerRole = 'Senior Interviewer',
+  compact = false,
 }) => {
   const currentState: AvatarState = useMemo(() => {
     if (isSpeaking) return 'speaking';
@@ -32,7 +34,7 @@ export const AIInterviewerAvatar: React.FC<AIInterviewerAvatarProps> = ({
       case 'speaking':
         return {
           avatarBg:
-            'bg-gradient-to-tr from-blue-600 via-indigo-600 to-purple-600 shadow-xl shadow-blue-500/40 scale-105',
+            'bg-gradient-to-tr from-blue-600 via-indigo-600 to-purple-600 shadow-xl shadow-blue-500/40',
           ringPrimary: 'border-blue-500/30',
           ringSecondary: 'border-indigo-500/20',
           dotColor: 'bg-blue-400 animate-pulse',
@@ -45,7 +47,7 @@ export const AIInterviewerAvatar: React.FC<AIInterviewerAvatarProps> = ({
       case 'listening':
         return {
           avatarBg:
-            'bg-gradient-to-tr from-emerald-600 to-teal-600 shadow-xl shadow-emerald-500/30 scale-100',
+            'bg-gradient-to-tr from-emerald-600 to-teal-600 shadow-xl shadow-emerald-500/30',
           ringPrimary: 'border-emerald-500/25',
           ringSecondary: 'border-teal-500/15',
           dotColor: 'bg-emerald-400 animate-pulse',
@@ -58,7 +60,7 @@ export const AIInterviewerAvatar: React.FC<AIInterviewerAvatarProps> = ({
       case 'thinking':
         return {
           avatarBg:
-            'bg-gradient-to-tr from-amber-600 to-orange-600 shadow-xl shadow-amber-500/30 scale-100',
+            'bg-gradient-to-tr from-amber-600 to-orange-600 shadow-xl shadow-amber-500/30',
           ringPrimary: 'border-amber-500/25',
           ringSecondary: 'border-orange-500/15',
           dotColor: 'bg-amber-400 animate-pulse',
@@ -70,7 +72,7 @@ export const AIInterviewerAvatar: React.FC<AIInterviewerAvatarProps> = ({
         };
       default:
         return {
-          avatarBg: 'bg-gradient-to-tr from-gray-700 to-gray-800 scale-100',
+          avatarBg: 'bg-gradient-to-tr from-gray-700 to-gray-800',
           ringPrimary: 'border-transparent',
           ringSecondary: 'border-transparent',
           dotColor: 'bg-gray-500',
@@ -86,6 +88,45 @@ export const AIInterviewerAvatar: React.FC<AIInterviewerAvatarProps> = ({
   const { BadgeIcon } = stateUI;
   const isActiveAudio = currentState === 'speaking' || currentState === 'listening';
 
+  // Compact Dock Mode (Slim, low-profile status card)
+  if (compact) {
+    return (
+      <div className="flex-1 flex items-center justify-between gap-3 px-3.5 py-2 rounded-xl bg-gray-900/90 border border-gray-800 shadow-md">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="relative shrink-0">
+            <div className={`w-8 h-8 rounded-lg ${stateUI.avatarBg} grid place-items-center text-white ring-1 ring-white/10`}>
+              <Bot className="w-4 h-4" />
+            </div>
+            <span className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full ring-2 ring-gray-950 ${stateUI.dotColor}`} />
+          </div>
+
+          <div className="min-w-0">
+            <p className="text-xs font-semibold text-white truncate leading-tight">
+              AI Interviewer <span className="text-[10px] text-gray-500 font-normal">({companyName})</span>
+            </p>
+            <p className={`text-[10px] font-medium ${stateUI.textColor} truncate mt-0.5`}>
+              {stateUI.label}
+            </p>
+          </div>
+        </div>
+
+        {/* Mini waveform bars */}
+        <div className="flex items-center gap-0.5 h-4 shrink-0 px-2 py-0.5 rounded-md bg-gray-950/60 border border-gray-800/80">
+          {WAVEFORM_BARS.slice(0, 7).map((height, idx) => (
+            <span
+              key={idx}
+              className={`w-0.5 rounded-full transition-all duration-200 ${stateUI.barColor}`}
+              style={{
+                height: isActiveAudio ? `${Math.max(20, height * 0.35)}%` : '20%',
+              }}
+            />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // Expanded Stage Mode
   return (
     <div
       role="status"
@@ -96,58 +137,47 @@ export const AIInterviewerAvatar: React.FC<AIInterviewerAvatarProps> = ({
       {currentState !== 'idle' && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
           <div
-            className={`w-44 h-44 rounded-full border ${stateUI.ringPrimary} ${isActiveAudio ? 'animate-ping' : 'animate-pulse'
-              }`}
-            style={{ animationDuration: isSpeaking ? '2s' : '3s' }}
+            className={`w-44 h-44 rounded-full border ${stateUI.ringPrimary} ${
+              isActiveAudio ? 'animate-ping' : 'animate-pulse'
+            }`}
           />
-          <div
-            className={` absolute w-60 h-60 rounded-full border ${stateUI.ringSecondary} animate-pulse`}
-          />
+          <div className={`w-32 h-32 rounded-full border ${stateUI.ringSecondary} animate-pulse`} />
         </div>
       )}
 
-      {/* Central Visual Avatar */}
+      {/* Main Avatar Centerpiece */}
       <div className="relative z-10 flex flex-col items-center gap-3">
-        <div
-          className={`relative w-20 h-20 rounded-2xl flex items-center justify-center transition-all duration-300 ${stateUI.avatarBg}`}
-        >
-          <Bot className="w-10 h-10 text-white" />
-
-          {/* Mini Status Badge */}
-          <div className="absolute -bottom-1 -right-1 p-1.5 rounded-full bg-gray-900 border border-gray-700 shadow-md">
-            <BadgeIcon className={`w-3.5 h-3.5 ${stateUI.badgeIconClass}`} />
+        <div className="relative">
+          <div
+            className={`w-20 h-20 rounded-2xl ${stateUI.avatarBg} grid place-items-center text-white ring-1 ring-white/20 transition-all duration-500`}
+          >
+            <Bot className="w-10 h-10" />
           </div>
+
+          <span
+            className={`absolute -bottom-1 -right-1 grid place-items-center w-6 h-6 rounded-full bg-gray-950 border border-gray-700/80 shadow-md`}
+          >
+            <BadgeIcon className={`w-3.5 h-3.5 ${stateUI.badgeIconClass}`} />
+          </span>
         </div>
 
-        {/* Labels & State */}
-        <div className="text-center space-y-1.5 px-4">
-          <h3 className="text-sm font-semibold text-white tracking-wide truncate max-w-xs">
-            {companyName.trim() || 'Top Tech'} {interviewerRole}
-          </h3>
-
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-gray-800/90 border border-gray-700 text-[11px] font-medium">
+        <div className="text-center space-y-0.5">
+          <div className="flex items-center justify-center gap-1.5">
             <span className={`w-2 h-2 rounded-full ${stateUI.dotColor}`} />
-            <span className={stateUI.textColor}>{stateUI.label}</span>
+            <span className="text-xs font-semibold text-gray-200">{companyName} Interviewer</span>
           </div>
+          <p className="text-[11px] text-gray-400">{interviewerRole}</p>
         </div>
       </div>
 
-      {/* Decorative Waveform Bars at bottom */}
-      <div className="absolute bottom-4 left-6 right-6 flex items-center justify-center gap-1.5 h-6 pointer-events-none">
-        {WAVEFORM_BARS.map((height, i) => (
-          <div
-            key={i}
-            className={`w-1 rounded-full transition-all duration-200 ${stateUI.barColor} ${isActiveAudio ? 'animate-pulse' : ''
-              }`}
+      {/* Audio Waveform Visualizer */}
+      <div className="absolute bottom-3 inset-x-0 flex items-center justify-center gap-1 h-6 pointer-events-none px-6">
+        {WAVEFORM_BARS.map((height, idx) => (
+          <span
+            key={idx}
+            className={`w-1 rounded-full transition-all duration-300 ${stateUI.barColor}`}
             style={{
-              height: isActiveAudio
-                ? `${height}%`
-                : currentState === 'thinking'
-                  ? '35%'
-                  : '20%',
-              opacity: currentState === 'idle' ? 0.4 : 0.95,
-              animationDelay: isActiveAudio ? `${(i % 5) * 120}ms` : '0ms',
-              animationDuration: isSpeaking ? '700ms' : '1100ms',
+              height: isActiveAudio ? `${Math.max(15, height * 0.7)}%` : '15%',
             }}
           />
         ))}

@@ -1,4 +1,5 @@
 export type InterviewMode = 'coding' | 'behavioral' | 'system_design' | 'full_mock';
+export type MeetingType = 'ai' | 'one_to_one' | 'room';
 
 export type AIProvider = 'gemini' | 'groq' | 'ollama';
 
@@ -6,6 +7,8 @@ export type CandidateLevel = 'entry' | 'mid' | 'senior' | 'staff_principal';
 
 export interface InterviewConfig {
   mode: InterviewMode;
+  meetingType: MeetingType;
+  roomCode?: string;
   targetRole: string;
   targetCompany: string;
   candidateLevel: CandidateLevel;
