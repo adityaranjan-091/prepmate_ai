@@ -8,7 +8,9 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "build:exe": "tauri build --no-bundle",
+    "build:installer": "tauri build --bundles nsis"
   },
   "dependencies": {
     "@monaco-editor/react": "^4.7.0",
