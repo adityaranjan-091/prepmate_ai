@@ -8,6 +8,7 @@ import {
   Sliders,
   LogOut,
   User as UserIcon,
+  GraduationCap,
 } from 'lucide-react';
 import { useInterviewStore } from '../../store/interviewStore';
 import { useAuthStore } from '../../store/authStore';
@@ -21,6 +22,12 @@ export const Sidebar: React.FC = () => {
       id: 'dashboard',
       label: 'Dashboard',
       icon: LayoutDashboard,
+    },
+    {
+      id: 'core_cs',
+      label: 'Core CS & OA Prep',
+      icon: GraduationCap,
+      badge: 'NEW',
     },
     {
       id: 'setup',

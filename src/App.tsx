@@ -8,6 +8,7 @@ import { InterviewRoom } from './components/interview/InterviewRoom';
 import { ScorecardView } from './components/report/ScorecardView';
 import { HistoryView } from './components/history/HistoryView';
 import { SettingsModal } from './components/settings/SettingsModal';
+import { CoreCsPracticeView } from './components/mcq/CoreCsPracticeView';
 import { AuthGuard } from './components/auth/AuthGuard';
 import { useInterviewStore } from './store/interviewStore';
 
@@ -28,6 +29,7 @@ export function App() {
           {/* Dynamic Main Workspace */}
           <main className="flex-1 flex flex-col overflow-hidden bg-gray-950/40 relative">
             {activeTab === 'dashboard' && <DashboardView />}
+            {activeTab === 'core_cs' && <CoreCsPracticeView />}
             {activeTab === 'setup' && <InterviewSetupModal />}
             {activeTab === 'interview' && <InterviewRoom />}
             {activeTab === 'report' && <ScorecardView />}

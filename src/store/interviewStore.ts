@@ -11,7 +11,7 @@ import { AIService } from '../services/aiService';
 
 interface InterviewState {
   // Navigation
-  activeTab: 'dashboard' | 'setup' | 'interview' | 'report' | 'settings' | 'history';
+  activeTab: 'dashboard' | 'setup' | 'interview' | 'report' | 'settings' | 'history' | 'core_cs';
   setActiveTab: (tab: InterviewState['activeTab']) => void;
 
   // Global Settings

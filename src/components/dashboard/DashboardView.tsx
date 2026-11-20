@@ -13,6 +13,7 @@ import {
   Calendar,
   Sparkles,
   LucideIcon,
+  GraduationCap,
 } from 'lucide-react';
 import { useInterviewStore } from '../../store/interviewStore';
 import { InterviewMode } from '../../types/interview';
@@ -137,7 +138,7 @@ export const DashboardView: React.FC = () => {
             critiques.
           </p>
 
-          <div className="pt-2">
+          <div className="pt-2 flex flex-wrap items-center gap-3">
             <button
               type="button"
               onClick={() => handleSelectMode()}
@@ -145,6 +146,18 @@ export const DashboardView: React.FC = () => {
             >
               <Play className="w-4 h-4 fill-white" />
               <span>Start New Mock Interview</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab('core_cs')}
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gray-800/80 hover:bg-gray-700/80 hover:border-blue-500/40 border border-gray-700 active:scale-[0.99] text-gray-200 hover:text-white font-medium text-sm transition cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-400/60"
+            >
+              <GraduationCap className="w-4 h-4 text-cyan-400" />
+              <span>Practice Core CS & OA MCQs</span>
+              <span className="px-1.5 py-0.5 text-[10px] font-bold tracking-wide uppercase rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+                New
+              </span>
             </button>
           </div>
         </div>
