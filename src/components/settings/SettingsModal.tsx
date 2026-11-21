@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { useInterviewStore } from '../../store/interviewStore';
 import { AIProvider } from '../../types/interview';
+import { DEFAULT_OLLAMA_MODEL } from '../../types/settings';
 import { speechService } from '../../services/speechService';
 
 export const SettingsModal: React.FC = () => {
@@ -23,6 +24,7 @@ export const SettingsModal: React.FC = () => {
 
   const [form, setForm] = useState(settings);
   const [ollamaStatus, setOllamaStatus] = useState<'idle' | 'checking' | 'connected' | 'failed'>('idle');
+  const [ollamaMessage, setOllamaMessage] = useState('');
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [savedAlert, setSavedAlert] = useState(false);
   const [showKey, setShowKey] = useState<{ [key: string]: boolean }>({});
@@ -53,15 +55,26 @@ export const SettingsModal: React.FC = () => {
 
   const handleTestOllama = async () => {
     setOllamaStatus('checking');
+    setOllamaMessage('');
     try {
       const res = await fetch(`${form.ollamaBaseUrl}/api/tags`);
       if (res.ok) {
-        setOllamaStatus('connected');
+        const data = (await res.json()) as { models?: Array<{ name?: string }> };
+        const modelName = form.ollamaModel.trim() || DEFAULT_OLLAMA_MODEL;
+        const modelInstalled = data.models?.some((model) => model.name === modelName);
+        setOllamaStatus(modelInstalled ? 'connected' : 'failed');
+        setOllamaMessage(
+          modelInstalled
+            ? `${modelName} is installed and ready.`
+            : `${modelName} was not found. Run "ollama pull ${modelName}" first.`
+        );
       } else {
         setOllamaStatus('failed');
+        setOllamaMessage(`Ollama returned HTTP ${res.status}.`);
       }
     } catch {
       setOllamaStatus('failed');
+      setOllamaMessage('Cannot reach Ollama. Make sure it is running locally.');
     }
   };
 
@@ -96,6 +109,11 @@ export const SettingsModal: React.FC = () => {
             <span>Save Settings</span>
           </button>
         </div>
+        {ollamaMessage && (
+          <p className={`text-[11px] ${ollamaStatus === 'connected' ? 'text-emerald-400' : 'text-red-400'}`}>
+            {ollamaMessage}
+          </p>
+        )}
       </div>
 
       <div className="space-y-6">
@@ -314,7 +332,7 @@ export const SettingsModal: React.FC = () => {
                   type="text"
                   value={form.ollamaModel}
                   onChange={(e) => setForm({ ...form, ollamaModel: e.target.value })}
-                  placeholder="llama3.2, deepseek-r1, qwen2.5-coder"
+                  placeholder={DEFAULT_OLLAMA_MODEL}
                   className="w-full bg-gray-900 border border-gray-800 rounded-lg px-2.5 py-1.5 text-xs text-white font-mono"
                 />
               </div>

@@ -6,7 +6,7 @@ import {
   Scorecard,
   VisionMetrics,
 } from '../types/interview';
-import { AppSettings, DEFAULT_SETTINGS } from '../types/settings';
+import { AppSettings, DEFAULT_OLLAMA_MODEL, DEFAULT_SETTINGS } from '../types/settings';
 import { AIService } from '../services/aiService';
 import { activityDbService } from '../services/activityDbService';
 
@@ -92,9 +92,18 @@ const loadSavedSettings = (): AppSettings => {
     return {
       ...DEFAULT_SETTINGS,
       ...parsed,
-      activeProvider: parsed.activeProvider === 'openai' ? 'gemini' : (parsed.activeProvider || DEFAULT_SETTINGS.activeProvider),
+      activeProvider:
+        parsed.ollamaModel?.trim() === 'llama3.2'
+          ? 'ollama'
+          : parsed.activeProvider === 'openai'
+            ? 'gemini'
+            : (parsed.activeProvider || DEFAULT_SETTINGS.activeProvider),
       geminiApiKey: parsed.geminiApiKey?.trim() || DEFAULT_SETTINGS.geminiApiKey,
       groqApiKey: parsed.groqApiKey?.trim() || DEFAULT_SETTINGS.groqApiKey,
+      ollamaModel:
+        parsed.ollamaModel?.trim() === 'llama3.2'
+          ? DEFAULT_OLLAMA_MODEL
+          : parsed.ollamaModel?.trim() || DEFAULT_OLLAMA_MODEL,
     };
   } catch {
     return DEFAULT_SETTINGS;

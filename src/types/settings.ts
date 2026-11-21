@@ -30,8 +30,10 @@ export interface AppSettings {
   interviewerPersonality: 'friendly' | 'balanced' | 'rigorous_faang' | 'stress_test';
 }
 
+export const DEFAULT_OLLAMA_MODEL = 'gemma4:e4b';
+
 export const DEFAULT_SETTINGS: AppSettings = {
-  activeProvider: 'gemini',
+  activeProvider: 'ollama',
   geminiApiKey:
     (typeof import.meta !== 'undefined' &&
       (import.meta.env?.VITE_GEMINI_API_KEY || import.meta.env?.GEMINI_API_KEY)) ||
@@ -43,7 +45,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
     '',
   groqModel: 'llama-3.3-70b-versatile',
   ollamaBaseUrl: 'http://localhost:11434',
-  ollamaModel: 'llama3.2',
+  ollamaModel: DEFAULT_OLLAMA_MODEL,
 
   enableLocalFallback: true,
 

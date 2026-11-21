@@ -1,5 +1,5 @@
 import { InterviewConfig, ChatMessage, Scorecard, AIProvider } from '../types/interview';
-import { AppSettings } from '../types/settings';
+import { AppSettings, DEFAULT_OLLAMA_MODEL } from '../types/settings';
 
 export interface StreamCallbacks {
   onChunk: (chunk: string) => void;
@@ -399,7 +399,7 @@ Evaluate the candidate and return STRICTLY a valid JSON object matching this sch
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: this.settings.ollamaModel || 'llama3.2',
+          model: this.settings.ollamaModel || DEFAULT_OLLAMA_MODEL,
           prompt: prompt + '\nRespond only with valid JSON.',
           stream: false,
           format: 'json',
@@ -722,7 +722,7 @@ Evaluate the candidate and return STRICTLY a valid JSON object matching this sch
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: this.settings.ollamaModel || 'llama3.2',
+        model: this.settings.ollamaModel || DEFAULT_OLLAMA_MODEL,
         messages,
         stream: true,
         options: {
