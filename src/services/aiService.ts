@@ -313,7 +313,7 @@ Evaluate the candidate and return STRICTLY a valid JSON object matching this sch
 
   // --- Provider Implementations ---
 
-  private async generateText(prompt: string): Promise<string> {
+  public async generateText(prompt: string): Promise<string> {
     const geminiKey = this.getGeminiApiKey();
     if (geminiKey) {
       const baseModel = (this.settings.geminiModel || 'gemini-1.5-flash').trim().replace(/^models\//, '');
