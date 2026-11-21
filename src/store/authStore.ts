@@ -11,6 +11,7 @@ import {
   onAuthStateChanged,
 } from 'firebase/auth';
 import { auth } from '../config/firebase';
+import { useProfileStore } from './profileStore';
 
 interface AuthState {
   user: User | null;
@@ -109,6 +110,10 @@ onAuthStateChanged(auth, (user) => {
     loading: false,
     initialized: true,
   });
+
+  if (user?.uid) {
+    useProfileStore.getState().initProfileForUser(user.uid);
+  }
 });
 
 function mapAuthError(codeOrMsg: string): string {

@@ -25,6 +25,9 @@ import {
   Link,
   X,
   Check,
+  Cloud,
+  CloudOff,
+  RefreshCw,
 } from 'lucide-react';
 import { useProfileStore } from '../../store/profileStore';
 import { useInterviewStore } from '../../store/interviewStore';
@@ -48,10 +51,24 @@ export const UserProfileView: React.FC = () => {
     removeSkill,
     resetToDefaultProfile,
     getSynthesizedResumeText,
+    syncStatus,
+    isSaving,
+    isLoading,
+    syncWithFirestore,
+    lastSyncedAt,
+    syncError,
+    initProfileForUser,
   } = useProfileStore();
 
   const { setActiveTab } = useInterviewStore();
   const { user } = useAuthStore();
+
+  // Ensure user profile is synced from Firestore on mount if authenticated
+  React.useEffect(() => {
+    if (user?.uid) {
+      initProfileForUser(user.uid);
+    }
+  }, [user?.uid]);
 
   const [activeTab, setActiveSectionTab] = useState<ProfileTab>('overview');
 
@@ -380,20 +397,62 @@ export const UserProfileView: React.FC = () => {
           </div>
         </div>
 
-        {/* Profile Strength Meter */}
-        <div className="mt-6 pt-5 border-t border-gray-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <span className="text-xs font-semibold text-gray-400">Profile Readiness:</span>
-            <div className="w-36 bg-gray-800 h-2 rounded-full overflow-hidden">
-              <div
-                className="bg-gradient-to-r from-blue-500 to-emerald-400 h-full rounded-full transition-all duration-500"
-                style={{ width: `${completionPercentage}%` }}
-              />
+        {/* Profile Strength Meter & Cloud Sync Status */}
+        <div className="mt-6 pt-5 border-t border-gray-800/80 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="flex items-center gap-3">
+              <span className="text-xs font-semibold text-gray-400">Profile Readiness:</span>
+              <div className="w-32 bg-gray-800 h-2 rounded-full overflow-hidden">
+                <div
+                  className="bg-gradient-to-r from-blue-500 to-emerald-400 h-full rounded-full transition-all duration-500"
+                  style={{ width: `${completionPercentage}%` }}
+                />
+              </div>
+              <span className="text-xs font-bold text-emerald-400">{completionPercentage}%</span>
             </div>
-            <span className="text-xs font-bold text-emerald-400">{completionPercentage}%</span>
+
+            {/* Cloud Firestore Sync Status Badge */}
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium border">
+              {syncStatus === 'synced' ? (
+                <span className="flex items-center gap-1.5 text-emerald-400 border-emerald-500/20 bg-emerald-500/10">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  <Cloud className="w-3.5 h-3.5" />
+                  <span>Cloud Synced (Firestore)</span>
+                </span>
+              ) : syncStatus === 'syncing' || isSaving ? (
+                <span className="flex items-center gap-1.5 text-blue-400 border-blue-500/20 bg-blue-500/10">
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                  <span>Syncing to Cloud...</span>
+                </span>
+              ) : syncStatus === 'error' ? (
+                <span className="flex items-center gap-1.5 text-red-400 border-red-500/20 bg-red-500/10" title={syncError || 'Sync failed'}>
+                  <CloudOff className="w-3.5 h-3.5" />
+                  <span>Cloud Sync Error (Check Rules)</span>
+                </span>
+              ) : (
+                <span className="flex items-center gap-1.5 text-gray-400 border-gray-700/60 bg-gray-800/50" title="Firestore not configured yet or offline">
+                  <CloudOff className="w-3.5 h-3.5 text-gray-500" />
+                  <span>Local Storage Active</span>
+                </span>
+              )}
+            </div>
           </div>
 
-          <div className="flex items-center gap-2 text-xs text-gray-400">
+          <div className="flex items-center gap-3 text-xs text-gray-400">
+            <button
+              type="button"
+              onClick={async () => {
+                const ok = await syncWithFirestore();
+                if (ok) alert('Profile synced successfully to Cloud Firestore!');
+                else if (syncError) alert(`Cloud sync status: ${syncError}`);
+              }}
+              className="hover:text-blue-400 transition flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-gray-800/60 hover:bg-gray-800 border border-gray-700/60 cursor-pointer"
+              title="Force sync to Cloud Firestore"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${isSaving ? 'animate-spin text-blue-400' : 'text-gray-400'}`} />
+              <span>Sync Cloud</span>
+            </button>
+            <span>•</span>
             <button
               type="button"
               onClick={handleExportJson}
