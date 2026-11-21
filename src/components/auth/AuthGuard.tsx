@@ -12,7 +12,7 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
 
   if (loading && !initialized) {
     return (
-      <div className="min-h-screen w-screen flex flex-col items-center justify-center bg-[#090a0d] text-gray-100 select-none">
+      <div className="min-h-screen w-screen flex flex-col items-center justify-center bg-gray-950 text-gray-100 select-none">
         <div className="relative mb-6">
           <div className="absolute inset-0 rounded-2xl bg-blue-500/30 blur-xl animate-pulse" />
           <div className="relative grid place-items-center w-16 h-16 rounded-2xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-purple-600 shadow-2xl shadow-blue-500/30 ring-1 ring-white/20">

@@ -195,7 +195,7 @@ Provide a concise, ultra-clear explanation (under 120 words) breaking down:
   };
 
   return (
-    <div className="flex-1 flex flex-col h-full overflow-hidden bg-[#090a0d] p-4 sm:p-6 gap-4 select-none">
+    <div className="flex-1 flex flex-col h-full overflow-hidden bg-gray-950 p-4 sm:p-6 gap-4 select-none">
       {/* ───────────── Header Bar & Stats ───────────── */}
       <div className="shrink-0 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gray-900/80 border border-gray-800 rounded-2xl p-4 shadow-xl backdrop-blur">
         <div>

@@ -66,7 +66,7 @@ export const LoginPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-[#090a0d] px-4 py-12 relative overflow-hidden select-none">
+    <div className="min-h-screen w-full flex items-center justify-center bg-gray-950 px-4 py-12 relative overflow-hidden select-none">
       {/* Background Decorative Gradients */}
       <div className="pointer-events-none absolute -top-40 -left-40 w-96 h-96 bg-blue-600/15 rounded-full blur-3xl" />
       <div className="pointer-events-none absolute -bottom-40 -right-40 w-96 h-96 bg-purple-600/15 rounded-full blur-3xl" />

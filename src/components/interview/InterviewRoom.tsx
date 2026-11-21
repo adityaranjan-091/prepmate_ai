@@ -276,7 +276,7 @@ export const InterviewRoom: React.FC = () => {
   ];
 
   return (
-    <div className="flex-1 flex flex-col h-full overflow-hidden p-3 sm:p-4 gap-3 bg-[#090a0d] select-none">
+    <div className="flex-1 flex flex-col h-full overflow-hidden p-3 sm:p-4 gap-3 bg-gray-950 select-none">
       {/* ───────────── Studio Control Navigation Bar ───────────── */}
       <header className="shrink-0 flex items-center justify-between gap-3 bg-gray-900/80 backdrop-blur border border-gray-800 rounded-2xl px-4 py-2.5 shadow-lg shadow-black/20">
         {/* Left: Role info & Status badge */}
