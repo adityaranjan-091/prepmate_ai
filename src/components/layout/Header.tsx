@@ -190,9 +190,15 @@ export const Header: React.FC = () => {
         {/* User Profile & Sign Out */}
         {user && (
           <div className="flex items-center gap-2 pl-1 border-l border-gray-800">
-            <div
-              className="flex items-center gap-2 px-2.5 py-1 rounded-xl bg-gray-800/50 border border-gray-700/50 text-xs"
-              title={user.email || ''}
+            <button
+              type="button"
+              onClick={() => setActiveTab('profile')}
+              title="View & Edit Candidate Profile"
+              className={`flex items-center gap-2 px-2.5 py-1 rounded-xl border text-xs transition cursor-pointer active:scale-95 ${
+                activeTab === 'profile'
+                  ? 'bg-blue-600/20 border-blue-500/40 text-blue-300 ring-1 ring-blue-500/30'
+                  : 'bg-gray-800/60 hover:bg-gray-700/80 border-gray-700/60 text-gray-200'
+              }`}
             >
               {user.photoURL ? (
                 <img
@@ -205,10 +211,10 @@ export const Header: React.FC = () => {
                   {userDisplayName.slice(0, 2)}
                 </div>
               )}
-              <span className="font-medium text-gray-200 max-w-[100px] truncate">
+              <span className="font-medium max-w-[100px] truncate">
                 {userDisplayName}
               </span>
-            </div>
+            </button>
 
             <button
               type="button"

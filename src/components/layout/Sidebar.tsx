@@ -7,6 +7,7 @@ import {
   History,
   Sliders,
   GraduationCap,
+  User,
 } from 'lucide-react';
 import { useInterviewStore } from '../../store/interviewStore';
 
@@ -18,6 +19,11 @@ export const Sidebar: React.FC = () => {
       id: 'dashboard',
       label: 'Dashboard',
       icon: LayoutDashboard,
+    },
+    {
+      id: 'profile',
+      label: 'Candidate Profile',
+      icon: User,
     },
     {
       id: 'core_cs',

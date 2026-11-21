@@ -14,6 +14,7 @@ import {
   Sparkles,
   LucideIcon,
   GraduationCap,
+  User,
 } from 'lucide-react';
 import { useInterviewStore } from '../../store/interviewStore';
 import { InterviewMode } from '../../types/interview';
@@ -150,14 +151,20 @@ export const DashboardView: React.FC = () => {
 
             <button
               type="button"
+              onClick={() => setActiveTab('profile')}
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gray-800/80 hover:bg-gray-700/80 hover:border-purple-500/40 border border-gray-700 active:scale-[0.99] text-gray-200 hover:text-white font-medium text-sm transition cursor-pointer focus:outline-none focus:ring-2 focus:ring-purple-400/60"
+            >
+              <User className="w-4 h-4 text-purple-400" />
+              <span>Candidate Profile</span>
+            </button>
+
+            <button
+              type="button"
               onClick={() => setActiveTab('core_cs')}
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gray-800/80 hover:bg-gray-700/80 hover:border-blue-500/40 border border-gray-700 active:scale-[0.99] text-gray-200 hover:text-white font-medium text-sm transition cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-400/60"
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gray-800/80 hover:bg-gray-700/80 hover:border-cyan-500/40 border border-gray-700 active:scale-[0.99] text-gray-200 hover:text-white font-medium text-sm transition cursor-pointer focus:outline-none focus:ring-2 focus:ring-cyan-400/60"
             >
               <GraduationCap className="w-4 h-4 text-cyan-400" />
-              <span>Practice Core CS & OA MCQs</span>
-              <span className="px-1.5 py-0.5 text-[10px] font-bold tracking-wide uppercase rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
-                New
-              </span>
+              <span>Practice Core CS & OA</span>
             </button>
           </div>
         </div>
