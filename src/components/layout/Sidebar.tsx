@@ -6,16 +6,12 @@ import {
   FileText,
   History,
   Sliders,
-  LogOut,
-  User as UserIcon,
   GraduationCap,
 } from 'lucide-react';
 import { useInterviewStore } from '../../store/interviewStore';
-import { useAuthStore } from '../../store/authStore';
 
 export const Sidebar: React.FC = () => {
   const { activeTab, setActiveTab, currentSession } = useInterviewStore();
-  const { user, signOut } = useAuthStore();
 
   const navItems = [
     {
@@ -27,7 +23,6 @@ export const Sidebar: React.FC = () => {
       id: 'core_cs',
       label: 'Core CS & OA Prep',
       icon: GraduationCap,
-      badge: 'NEW',
     },
     {
       id: 'setup',
@@ -60,7 +55,6 @@ export const Sidebar: React.FC = () => {
   ];
 
   const isSessionLive = currentSession?.status === 'in_progress';
-  const userDisplayName = user?.displayName || user?.email?.split('@')[0] || 'User';
 
   return (
     <aside className="relative w-64 shrink-0 flex flex-col justify-between gap-4 p-4 border-r border-gray-800/80 bg-gradient-to-b from-gray-900/70 to-gray-950/80 select-none">
@@ -132,9 +126,9 @@ export const Sidebar: React.FC = () => {
         </nav>
       </div>
 
-      {/* ───────────── Footer: Current session + User card ───────────── */}
-      <div className="shrink-0 space-y-2">
-        {currentSession && (
+      {/* ───────────── Footer: Current session indicator (if active) ───────────── */}
+      {currentSession && (
+        <div className="shrink-0">
           <div className="rounded-xl border border-gray-800 bg-gray-900/70 p-3 shadow-inner shadow-black/20">
             <div className="flex items-center justify-between mb-2">
               <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-gray-500">
@@ -173,45 +167,8 @@ export const Sidebar: React.FC = () => {
               {currentSession.config.mode.replace('_', ' ')}
             </span>
           </div>
-        )}
-
-        {/* User Account Card */}
-        {user && (
-          <div className="flex items-center justify-between gap-2 p-2.5 rounded-xl border border-gray-800/90 bg-gray-900/60 hover:bg-gray-900/90 transition-all">
-            <div className="flex items-center gap-2.5 min-w-0">
-              {user.photoURL ? (
-                <img
-                  src={user.photoURL}
-                  alt={userDisplayName}
-                  className="w-8 h-8 rounded-full object-cover shrink-0 ring-1 ring-blue-500/30"
-                />
-              ) : (
-                <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 text-white font-semibold text-xs grid place-items-center shrink-0 ring-1 ring-white/10 uppercase">
-                  {userDisplayName.slice(0, 2)}
-                </div>
-              )}
-              <div className="min-w-0">
-                <p className="text-xs font-semibold text-gray-200 truncate">
-                  {userDisplayName}
-                </p>
-                <p className="text-[10px] text-gray-500 truncate" title={user.email || ''}>
-                  {user.email || 'Authenticated'}
-                </p>
-              </div>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => signOut()}
-              title="Sign Out"
-              aria-label="Sign Out"
-              className="p-1.5 rounded-lg text-gray-400 hover:text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer"
-            >
-              <LogOut className="w-4 h-4" />
-            </button>
-          </div>
-        )}
-      </div>
+        </div>
+      )}
     </aside>
   );
 };
