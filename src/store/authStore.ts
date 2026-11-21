@@ -12,6 +12,8 @@ import {
 } from 'firebase/auth';
 import { auth } from '../config/firebase';
 import { useProfileStore } from './profileStore';
+import { useInterviewStore } from './interviewStore';
+import { useMCQStore } from './mcqStore';
 
 interface AuthState {
   user: User | null;
@@ -37,8 +39,8 @@ export const useAuthStore = create<AuthState>((set) => ({
     try {
       const res = await signInWithEmailAndPassword(auth, email.trim(), pass);
       set({ user: res.user, loading: false, error: null });
-    } catch (err: any) {
-      const msg = mapAuthError(err.code || err.message);
+    } catch (err: unknown) {
+      const msg = mapAuthError((err as { code?: string; message?: string }).code || (err as Error).message);
       set({ error: msg, loading: false });
       throw new Error(msg);
     }
@@ -52,8 +54,8 @@ export const useAuthStore = create<AuthState>((set) => ({
         await updateProfile(res.user, { displayName: displayName.trim() });
       }
       set({ user: auth.currentUser || res.user, loading: false, error: null });
-    } catch (err: any) {
-      const msg = mapAuthError(err.code || err.message);
+    } catch (err: unknown) {
+      const msg = mapAuthError((err as { code?: string; message?: string }).code || (err as Error).message);
       set({ error: msg, loading: false });
       throw new Error(msg);
     }
@@ -66,13 +68,12 @@ export const useAuthStore = create<AuthState>((set) => ({
       provider.setCustomParameters({ prompt: 'select_account' });
       const res = await signInWithPopup(auth, provider);
       set({ user: res.user, loading: false, error: null });
-    } catch (err: any) {
-      // Don't treat user closing popup as a fatal system error, but report cleanly
-      if (err.code === 'auth/popup-closed-by-user') {
+    } catch (err: unknown) {
+      if ((err as { code?: string }).code === 'auth/popup-closed-by-user') {
         set({ loading: false, error: null });
         return;
       }
-      const msg = mapAuthError(err.code || err.message);
+      const msg = mapAuthError((err as { code?: string; message?: string }).code || (err as Error).message);
       set({ error: msg, loading: false });
       throw new Error(msg);
     }
@@ -82,9 +83,13 @@ export const useAuthStore = create<AuthState>((set) => ({
     set({ loading: true });
     try {
       await firebaseSignOut(auth);
+      // Clear all in-memory user data so the next user gets a clean slate
+      useInterviewStore.getState().setCurrentUserId(null);
+      useInterviewStore.setState({ sessionHistory: [], historyLoading: false, historyError: null });
+      useMCQStore.getState().resetProgress();
       set({ user: null, loading: false, error: null });
-    } catch (err: any) {
-      set({ error: err.message, loading: false });
+    } catch (err: unknown) {
+      set({ error: (err as Error).message, loading: false });
     }
   },
 
@@ -93,8 +98,8 @@ export const useAuthStore = create<AuthState>((set) => ({
     try {
       await sendPasswordResetEmail(auth, email.trim());
       set({ loading: false, error: null });
-    } catch (err: any) {
-      const msg = mapAuthError(err.code || err.message);
+    } catch (err: unknown) {
+      const msg = mapAuthError((err as { code?: string; message?: string }).code || (err as Error).message);
       set({ error: msg, loading: false });
       throw new Error(msg);
     }
@@ -103,22 +108,33 @@ export const useAuthStore = create<AuthState>((set) => ({
   clearError: () => set({ error: null }),
 }));
 
-// Initialize Firebase auth listener once
+// Initialize Firebase auth listener once — runs on module import
 onAuthStateChanged(auth, (user) => {
-  useAuthStore.setState({
-    user,
-    loading: false,
-    initialized: true,
-  });
+  useAuthStore.setState({ user, loading: false, initialized: true });
 
   if (user?.uid) {
+    // Load profile data from Firestore for the signed-in user
     useProfileStore.getState().initProfileForUser(user.uid);
+    // Load interview sessions & settings from Firestore
+    useInterviewStore.getState().initSessionsForUser(user.uid);
+    // Load MCQ / OA prep progress from Firestore
+    useMCQStore.getState().initForUser(user.uid);
+  } else {
+    // User signed out: wipe in-memory data
+    useInterviewStore.getState().setCurrentUserId(null);
+    useInterviewStore.setState({ sessionHistory: [], historyLoading: false, historyError: null });
+    useMCQStore.setState({ answers: {}, bookmarks: new Set(), subjectScores: {} as any, currentUserId: null });
   }
 });
 
 function mapAuthError(codeOrMsg: string): string {
+  if (!codeOrMsg) return 'Authentication failed. Please try again.';
   if (codeOrMsg.includes('auth/invalid-email')) return 'Invalid email address format.';
-  if (codeOrMsg.includes('auth/user-not-found') || codeOrMsg.includes('auth/wrong-password') || codeOrMsg.includes('auth/invalid-credential')) {
+  if (
+    codeOrMsg.includes('auth/user-not-found') ||
+    codeOrMsg.includes('auth/wrong-password') ||
+    codeOrMsg.includes('auth/invalid-credential')
+  ) {
     return 'Invalid email or password.';
   }
   if (codeOrMsg.includes('auth/email-already-in-use')) return 'This email address is already registered.';
@@ -129,4 +145,3 @@ function mapAuthError(codeOrMsg: string): string {
   if (codeOrMsg.includes('auth/operation-not-allowed')) return 'This sign-in provider is not enabled in Firebase Console.';
   return codeOrMsg || 'Authentication failed. Please try again.';
 }
-

@@ -29,11 +29,20 @@ import {
 import { CORE_CS_QUESTIONS } from '../../data/coreCsQuestions';
 import { CSSubject, MCQQuestion } from '../../types/mcq';
 import { useInterviewStore } from '../../store/interviewStore';
+import { useMCQStore } from '../../store/mcqStore';
 
 type PracticeMode = 'practice' | 'assessment';
 
 export const CoreCsPracticeView: React.FC = () => {
   const { aiService } = useInterviewStore();
+  const {
+    answers: userAnswers,
+    bookmarks: bookmarkedIds,
+    recordAnswer,
+    toggleBookmark,
+    resetProgress,
+    isLoading: mcqLoading,
+  } = useMCQStore();
 
   const [selectedSubject, setSelectedSubject] = useState<'All' | CSSubject>('All');
   const [selectedDifficulty, setSelectedDifficulty] = useState<'All' | 'Easy' | 'Medium' | 'Hard'>('All');
@@ -44,16 +53,8 @@ export const CoreCsPracticeView: React.FC = () => {
   // Question navigation in current view
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  // User answers state: questionId -> selectedOptionIndex
-  const [userAnswers, setUserAnswers] = useState<Record<string, number>>({});
-  const [bookmarkedIds, setBookmarkedIds] = useState<Set<string>>(() => {
-    try {
-      const saved = localStorage.getItem('prepmate_mcq_bookmarks');
-      return saved ? new Set(JSON.parse(saved)) : new Set();
-    } catch {
-      return new Set();
-    }
-  });
+  // Local answers state for timed assessment mode (so assessment doesn't overwrite practice until submitted or acts as temp)
+  const [assessmentAnswers, setAssessmentAnswers] = useState<Record<string, number>>({});
 
   // AI explanation state for tricky concepts
   const [aiExplanations, setAiExplanations] = useState<Record<string, { loading: boolean; text?: string }>>({});
@@ -62,19 +63,6 @@ export const CoreCsPracticeView: React.FC = () => {
   const [isAssessmentActive, setIsAssessmentActive] = useState(false);
   const [assessmentSecondsLeft, setAssessmentSecondsLeft] = useState(1200); // 20 mins
   const [assessmentSubmitted, setAssessmentSubmitted] = useState(false);
-
-  // Save bookmarks
-  const toggleBookmark = (id: string) => {
-    setBookmarkedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      try {
-        localStorage.setItem('prepmate_mcq_bookmarks', JSON.stringify(Array.from(next)));
-      } catch {}
-      return next;
-    });
-  };
 
   // Filtered questions
   const filteredQuestions = useMemo(() => {
@@ -114,15 +102,22 @@ export const CoreCsPracticeView: React.FC = () => {
     return () => clearInterval(interval);
   }, [isAssessmentActive, assessmentSubmitted]);
 
+  const activeAnswers = mode === 'assessment' ? assessmentAnswers : userAnswers;
+
   const currentQ: MCQQuestion | undefined = filteredQuestions[currentIndex];
 
   const handleSelectOption = (optionIndex: number) => {
     if (!currentQ) return;
-    // In practice mode, lock once chosen or allow re-answering
-    setUserAnswers((prev) => ({
-      ...prev,
-      [currentQ.id]: optionIndex,
-    }));
+    if (mode === 'assessment') {
+      if (assessmentSubmitted) return;
+      setAssessmentAnswers((prev) => ({
+        ...prev,
+        [currentQ.id]: optionIndex,
+      }));
+    } else {
+      // Practice mode: persist to Firestore via useMCQStore
+      recordAnswer(currentQ.id, optionIndex, currentQ.correctIndex, currentQ.subject);
+    }
   };
 
   const handleAskAIExplanation = async (q: MCQQuestion) => {
@@ -159,23 +154,25 @@ Provide a concise, ultra-clear explanation (under 120 words) breaking down:
 
   // Global score statistics
   const stats = useMemo(() => {
+    const currentMap = mode === 'assessment' ? assessmentAnswers : userAnswers;
     let attempted = 0;
     let correct = 0;
     CORE_CS_QUESTIONS.forEach((q) => {
-      if (userAnswers[q.id] !== undefined) {
+      if (currentMap[q.id] !== undefined) {
         attempted++;
-        if (userAnswers[q.id] === q.correctIndex) {
+        if (currentMap[q.id] === q.correctIndex) {
           correct++;
         }
       }
     });
     const percentage = attempted > 0 ? Math.round((correct / attempted) * 100) : 0;
     return { attempted, correct, percentage };
-  }, [userAnswers]);
+  }, [userAnswers, assessmentAnswers, mode]);
 
   const resetAllProgress = () => {
     if (window.confirm('Reset all answers and practice metrics?')) {
-      setUserAnswers({});
+      resetProgress();
+      setAssessmentAnswers({});
       setAssessmentSubmitted(false);
       setIsAssessmentActive(false);
       setAssessmentSecondsLeft(1200);
@@ -415,7 +412,7 @@ Provide a concise, ultra-clear explanation (under 120 words) breaking down:
             <button
               type="button"
               onClick={() => {
-                setUserAnswers({});
+                setAssessmentAnswers({});
                 setAssessmentSubmitted(false);
                 setAssessmentSecondsLeft(1200);
               }}
@@ -527,8 +524,8 @@ Provide a concise, ultra-clear explanation (under 120 words) breaking down:
                 <div className="space-y-2.5 pt-1">
                   {currentQ.options.map((option, idx) => {
                     const optionLetter = String.fromCharCode(65 + idx);
-                    const isSelected = userAnswers[currentQ.id] === idx;
-                    const isAnswered = userAnswers[currentQ.id] !== undefined;
+                    const isSelected = activeAnswers[currentQ.id] === idx;
+                    const isAnswered = activeAnswers[currentQ.id] !== undefined;
                     const isCorrect = idx === currentQ.correctIndex;
 
                     // Option styling depending on practice mode & correctness
@@ -574,11 +571,11 @@ Provide a concise, ultra-clear explanation (under 120 words) breaking down:
                 </div>
 
                 {/* Practice Mode: In-depth Explanation Card */}
-                {mode === 'practice' && userAnswers[currentQ.id] !== undefined && (
+                {mode === 'practice' && activeAnswers[currentQ.id] !== undefined && (
                   <div className="p-4 rounded-xl bg-gray-900/90 border border-gray-800 space-y-3 animate-fadeIn">
                     <div className="flex items-center justify-between border-b border-gray-800 pb-2.5">
                       <div className="flex items-center gap-2">
-                        {userAnswers[currentQ.id] === currentQ.correctIndex ? (
+                        {activeAnswers[currentQ.id] === currentQ.correctIndex ? (
                           <div className="flex items-center gap-1.5 text-xs font-semibold text-emerald-400">
                             <CheckCircle2 className="w-4 h-4" />
                             <span>Correct!</span>
@@ -670,7 +667,7 @@ Provide a concise, ultra-clear explanation (under 120 words) breaking down:
                 Question Grid
               </h3>
               <span className="text-[10px] text-gray-500 font-mono">
-                {Object.keys(userAnswers).length}/{filteredQuestions.length} Answered
+                {Object.keys(activeAnswers).length}/{filteredQuestions.length} Answered
               </span>
             </div>
 
@@ -678,8 +675,8 @@ Provide a concise, ultra-clear explanation (under 120 words) breaking down:
             <div className="grid grid-cols-5 gap-1.5">
               {filteredQuestions.map((q, idx) => {
                 const isCurrent = idx === currentIndex;
-                const isAnswered = userAnswers[q.id] !== undefined;
-                const isCorrect = userAnswers[q.id] === q.correctIndex;
+                const isAnswered = activeAnswers[q.id] !== undefined;
+                const isCorrect = activeAnswers[q.id] === q.correctIndex;
 
                 let gridBtnClass = 'bg-gray-900 border-gray-800 text-gray-400 hover:text-white';
                 if (isCurrent) {

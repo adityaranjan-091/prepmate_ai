@@ -11,6 +11,8 @@ import {
   MessageSquare,
   Plus,
   Trash2,
+  Loader2,
+  AlertCircle,
 } from 'lucide-react';
 import { useInterviewStore } from '../../store/interviewStore';
 import { InterviewMode } from '../../types/interview';
@@ -67,7 +69,7 @@ const getScoreColor = (score: number): string => {
 
 export const HistoryView: React.FC = () => {
   const store = useInterviewStore();
-  const { sessionHistory = [], loadSession, setActiveTab } = store;
+  const { sessionHistory = [], historyLoading, historyError, loadSession, setActiveTab } = store;
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedMode, setSelectedMode] = useState<FilterMode>('all');
@@ -171,7 +173,19 @@ export const HistoryView: React.FC = () => {
       )}
 
       {/* Session List / Empty States */}
-      {sessionHistory.length === 0 ? (
+      {historyLoading ? (
+        <div className="p-12 text-center rounded-2xl bg-gray-900/60 border border-gray-800 space-y-3">
+          <Loader2 className="w-8 h-8 text-blue-500 animate-spin mx-auto" />
+          <h3 className="text-sm font-semibold text-white">Loading Your Interview History...</h3>
+          <p className="text-xs text-gray-400">Fetching records from Cloud Firestore.</p>
+        </div>
+      ) : historyError ? (
+        <div className="p-8 text-center rounded-2xl bg-rose-950/20 border border-rose-500/30 space-y-2">
+          <AlertCircle className="w-8 h-8 text-rose-400 mx-auto" />
+          <h3 className="text-sm font-semibold text-rose-200">Failed to Load Cloud History</h3>
+          <p className="text-xs text-rose-400/80">{historyError}</p>
+        </div>
+      ) : sessionHistory.length === 0 ? (
         <div className="p-12 text-center rounded-2xl bg-gray-900/60 border border-gray-800 space-y-3">
           <History className="w-10 h-10 text-gray-600 mx-auto" />
           <h3 className="text-sm font-semibold text-white">No Interviews Recorded Yet</h3>

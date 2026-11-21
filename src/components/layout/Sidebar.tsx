@@ -26,7 +26,7 @@ export const Sidebar: React.FC = () => {
     },
     {
       id: 'setup',
-      label: 'Start Interview',
+      label: 'AI Mock Interview',
       icon: Video,
       badge: currentSession?.status === 'in_progress' ? 'LIVE' : undefined,
     },

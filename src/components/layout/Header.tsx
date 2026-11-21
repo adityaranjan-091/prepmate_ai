@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
-  Sparkles,
   Settings,
   ShieldAlert,
   Clock,
@@ -53,11 +52,21 @@ export const Header: React.FC = () => {
   }, [isUserMenuOpen]);
 
   useEffect(() => {
-    if (!currentSession || currentSession.status !== 'in_progress') return;
+    if (!currentSession) {
+      setElapsedSeconds(0);
+      return;
+    }
+
+    const computeElapsed = () =>
+      Math.max(0, Math.floor((Date.now() - currentSession.startTime) / 1000));
+
+    // Sync immediately on mount or status change so there is no 1s lag
+    setElapsedSeconds(computeElapsed());
+
+    if (currentSession.status !== 'in_progress') return;
 
     const timer = setInterval(() => {
-      const elapsed = Math.floor((Date.now() - currentSession.startTime) / 1000);
-      setElapsedSeconds(elapsed);
+      setElapsedSeconds(computeElapsed());
     }, 1000);
 
     return () => clearInterval(timer);
@@ -72,69 +81,81 @@ export const Header: React.FC = () => {
   const isInProgress = currentSession?.status === 'in_progress';
   const isSettingsOpen = activeTab === 'settings';
 
+  const activeModel =
+    settings.activeProvider === 'gemini'
+      ? settings.geminiModel
+      : settings.activeProvider === 'groq'
+        ? settings.groqModel
+        : settings.ollamaModel;
+
   const focusRing =
     'focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/60 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900';
 
   const userDisplayName = user?.displayName || user?.email?.split('@')[0] || 'User';
 
   return (
-    <header className="relative z-20 h-16 shrink-0 flex items-center gap-4 px-6 border-b border-gray-800/80 bg-gray-900/80 backdrop-blur-xl select-none">
+    <header className="relative z-20 h-16 shrink-0 flex items-center gap-4 px-4 sm:px-6 border-b border-gray-800/80 bg-gray-900/80 backdrop-blur-xl select-none">
       {/* Subtle bottom accent line */}
       <div className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-blue-500/30 to-transparent" />
 
       {/* ───────────── Left: Brand ───────────── */}
-      <div className="flex-1 flex items-center gap-3 min-w-0">
-        <div className="relative shrink-0">
-          <div className="absolute inset-0 rounded-xl bg-blue-500/20 blur-md" />
-          <img
-            src="/logo.png"
-            alt="Prepmate AI Logo"
-            className="relative w-10 h-10 rounded-xl object-contain shadow-md ring-1 ring-white/10 bg-gray-900/60 p-1"
-          />
-        </div>
-
-        <div className="min-w-0 leading-tight">
-          <div className="flex items-center gap-2">
-            <span className="font-bold text-lg tracking-tight bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
-              Prepmate
-            </span>
-            <span className="text-[10px] font-semibold tracking-wider uppercase px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20">
-              AI
-            </span>
+      <div className="flex-1 flex items-center min-w-0">
+        <button
+          type="button"
+          onClick={() => setActiveTab('dashboard')}
+          title="Return to Dashboard"
+          className={`group flex items-center gap-3 text-left rounded-xl p-1 -ml-1 transition cursor-pointer min-w-0 ${focusRing}`}
+        >
+          <div className="relative shrink-0">
+            <div className="absolute inset-0 rounded-xl bg-blue-500/20 blur-md group-hover:bg-blue-500/30 transition-colors" />
+            <img
+              src="/logo.png"
+              alt="Prepmate AI Logo"
+              className="relative w-10 h-10 rounded-xl object-contain shadow-md ring-1 ring-white/10 group-hover:ring-blue-400/30 bg-gray-900/60 p-1 transition"
+            />
           </div>
-          <p className="text-[11px] text-gray-500 truncate">Desktop Interview Studio</p>
-        </div>
+
+          <div className="min-w-0 leading-tight">
+            <div className="flex items-center gap-2">
+              <span className="font-bold text-lg tracking-tight bg-gradient-to-r from-white to-gray-300 group-hover:from-white group-hover:to-blue-200 bg-clip-text text-transparent transition">
+                Prepmate
+              </span>
+              <span className="text-[10px] font-semibold tracking-wider uppercase px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                AI
+              </span>
+            </div>
+            <p className="text-[11px] text-gray-500 truncate">Desktop Interview Studio</p>
+          </div>
+        </button>
       </div>
 
       {/* ───────────── Center: Active session pill ───────────── */}
       {currentSession && activeTab === 'interview' && (
-        <div className="shrink-0 flex items-center gap-3.5 pl-4 pr-1.5 py-1.5 rounded-full bg-gray-800/70 border border-gray-700/60 shadow-inner shadow-black/20">
+        <div className="shrink-0 flex items-center gap-3 sm:gap-3.5 pl-3.5 sm:pl-4 pr-1.5 py-1.5 rounded-full bg-gray-800/70 border border-gray-700/60 shadow-inner shadow-black/20">
           <div className="flex items-center gap-2">
             <span className="relative flex w-2.5 h-2.5">
               {isInProgress && (
                 <span className="absolute inline-flex w-full h-full rounded-full bg-emerald-400 opacity-75 animate-ping" />
               )}
               <span
-                className={`relative inline-flex w-2.5 h-2.5 rounded-full ${
-                  isInProgress ? 'bg-emerald-500' : 'bg-amber-500'
-                }`}
+                className={`relative inline-flex w-2.5 h-2.5 rounded-full ${isInProgress ? 'bg-emerald-500' : 'bg-amber-500'
+                  }`}
               />
             </span>
-            <span className="text-[11px] font-semibold text-gray-200 uppercase tracking-wider">
+            <span className="hidden md:inline text-[11px] font-semibold text-gray-200 uppercase tracking-wider">
               {currentSession.config.mode.replace('_', ' ')} Interview
             </span>
           </div>
 
-          <div className="h-4 w-px bg-gray-700" />
+          <div className="hidden md:block h-4 w-px bg-gray-700" />
 
           {/* Timer */}
           <div
-            className={`flex items-center gap-1.5 text-xs font-mono tabular-nums ${
-              isInProgress ? 'text-blue-300' : 'text-amber-300'
-            }`}
-            title="Elapsed time"
+            className={`flex items-center gap-1.5 text-xs font-mono tabular-nums ${isInProgress ? 'text-blue-300' : 'text-amber-300'
+              }`}
+            title="Elapsed session time"
           >
-            <Clock className="w-3.5 h-3.5" />
+            <Clock className="w-3.5 h-3.5 shrink-0" />
             <span>{formatTimer(elapsedSeconds)}</span>
             {!isInProgress && (
               <span className="ml-1 px-1.5 py-0.5 rounded-md bg-amber-500/10 border border-amber-500/30 text-[9px] font-sans font-semibold uppercase tracking-wider text-amber-400">
@@ -169,34 +190,38 @@ export const Header: React.FC = () => {
       )}
 
       {/* ───────────── Right: Controls ───────────── */}
-      <div className="flex-1 flex items-center justify-end gap-3 min-w-0">
+      <div className="flex-1 flex items-center justify-end gap-2.5 sm:gap-3 min-w-0">
         {/* Posture warning */}
         {postureAlertActive && (
           <div
             role="alert"
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-medium shadow-lg shadow-amber-500/10 animate-pulse"
+            className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-medium shadow-lg shadow-amber-500/10 animate-pulse"
           >
-            <ShieldAlert className="w-3.5 h-3.5" />
-            <span>Adjust Posture</span>
+            <ShieldAlert className="w-3.5 h-3.5 shrink-0" />
+            <span className="hidden sm:inline">Adjust Posture</span>
           </div>
         )}
 
         {/* AI engine status pill */}
-        <div
-          className="flex items-center gap-2.5 pl-1.5 pr-3 py-1 rounded-xl bg-gray-800/70 border border-gray-700/70 text-xs text-gray-300 min-w-0"
-          title={`AI engine: ${settings.activeProvider}`}
+        <button
+          type="button"
+          onClick={() => setActiveTab('settings')}
+          title={`AI Engine: ${settings.activeProvider}${activeModel ? ` (${activeModel})` : ''} — Click to configure`}
+          className={`hidden sm:flex items-center gap-2.5 pl-1.5 pr-3 py-1 rounded-xl bg-gray-800/70 hover:bg-gray-800 border border-gray-700/70 hover:border-gray-600 text-xs text-gray-300 transition cursor-pointer min-w-0 ${focusRing}`}
         >
           <span className="grid place-items-center w-6 h-6 shrink-0 rounded-lg bg-indigo-500/10 border border-indigo-500/20">
             <Cpu className="w-3.5 h-3.5 text-indigo-400" />
           </span>
-          <span className="capitalize font-medium truncate max-w-[120px]">{settings.activeProvider}</span>
+          <span className="capitalize font-medium truncate max-w-[110px]">
+            {settings.activeProvider}
+          </span>
           <span className="relative flex w-1.5 h-1.5 shrink-0">
             <span className="absolute inline-flex w-full h-full rounded-full bg-emerald-400 opacity-75 animate-ping" />
             <span className="relative inline-flex w-1.5 h-1.5 rounded-full bg-emerald-400" />
           </span>
-        </div>
+        </button>
 
-        <div className="h-6 w-px bg-gray-800" />
+        <div className="hidden sm:block h-6 w-px bg-gray-800" />
 
         {/* Settings button */}
         <button
@@ -205,13 +230,15 @@ export const Header: React.FC = () => {
           title="Open Settings"
           aria-label="Open Settings"
           aria-pressed={isSettingsOpen}
-          className={`grid place-items-center w-9 h-9 rounded-xl border transition-all cursor-pointer active:scale-95 ${focusRing} ${
-            isSettingsOpen
+          className={`grid place-items-center w-9 h-9 shrink-0 rounded-xl border transition-all cursor-pointer active:scale-95 ${focusRing} ${isSettingsOpen
               ? 'bg-blue-600/20 border-blue-500/40 text-blue-300 shadow-md shadow-blue-600/20'
               : 'bg-gray-800/70 hover:bg-gray-700 border-gray-700/70 text-gray-300 hover:text-white'
-          }`}
+            }`}
         >
-          <Settings className={`w-4 h-4 transition-transform duration-300 ${isSettingsOpen ? 'rotate-90' : ''}`} />
+          <Settings
+            className={`w-4 h-4 transition-transform duration-300 ${isSettingsOpen ? 'rotate-90' : ''
+              }`}
+          />
         </button>
 
         {/* User Account Dropdown */}
@@ -223,11 +250,10 @@ export const Header: React.FC = () => {
               aria-expanded={isUserMenuOpen}
               aria-haspopup="menu"
               title="User Account Menu"
-              className={`flex items-center gap-2 pl-2 pr-2.5 py-1 rounded-xl border text-xs transition cursor-pointer select-none active:scale-[0.98] ${focusRing} ${
-                isUserMenuOpen || activeTab === 'profile'
+              className={`flex items-center gap-2 pl-2 pr-2.5 py-1 rounded-xl border text-xs transition cursor-pointer select-none active:scale-[0.98] ${focusRing} ${isUserMenuOpen || activeTab === 'profile'
                   ? 'bg-blue-600/20 border-blue-500/40 text-blue-300 ring-1 ring-blue-500/30'
                   : 'bg-gray-800/60 hover:bg-gray-700/80 border-gray-700/60 text-gray-200'
-              }`}
+                }`}
             >
               {user.photoURL ? (
                 <img
@@ -240,13 +266,12 @@ export const Header: React.FC = () => {
                   {userDisplayName.slice(0, 2)}
                 </div>
               )}
-              <span className="font-semibold max-w-[120px] truncate">
+              <span className="hidden sm:inline font-semibold max-w-[110px] truncate">
                 {userDisplayName}
               </span>
               <ChevronDown
-                className={`w-3.5 h-3.5 text-gray-400 transition-transform duration-200 ${
-                  isUserMenuOpen ? 'rotate-180 text-blue-400' : ''
-                }`}
+                className={`w-3.5 h-3.5 text-gray-400 transition-transform duration-200 ${isUserMenuOpen ? 'rotate-180 text-blue-400' : ''
+                  }`}
               />
             </button>
 
@@ -287,18 +312,17 @@ export const Header: React.FC = () => {
                     setActiveTab('profile');
                     setIsUserMenuOpen(false);
                   }}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left text-xs font-medium transition cursor-pointer ${
-                    activeTab === 'profile'
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left text-xs font-medium transition cursor-pointer ${activeTab === 'profile'
                       ? 'bg-blue-600/20 text-blue-300 border border-blue-500/30'
                       : 'text-gray-300 hover:text-white hover:bg-gray-800/70 border border-transparent'
-                  }`}
+                    }`}
                 >
                   <div className="w-7 h-7 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 shrink-0">
                     <UserIcon className="w-4 h-4" />
                   </div>
                   <div className="min-w-0">
                     <p className="font-semibold text-white">Candidate Profile</p>
-                    <p className="text-[10px] text-gray-400">Education, skills & experience</p>
+                    <p className="text-[10px] text-gray-400">Education, skills &amp; experience</p>
                   </div>
                 </button>
 
@@ -310,18 +334,17 @@ export const Header: React.FC = () => {
                     setActiveTab('settings');
                     setIsUserMenuOpen(false);
                   }}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left text-xs font-medium transition cursor-pointer ${
-                    activeTab === 'settings'
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left text-xs font-medium transition cursor-pointer ${activeTab === 'settings'
                       ? 'bg-blue-600/20 text-blue-300 border border-blue-500/30'
                       : 'text-gray-300 hover:text-white hover:bg-gray-800/70 border border-transparent'
-                  }`}
+                    }`}
                 >
                   <div className="w-7 h-7 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 shrink-0">
                     <Settings className="w-4 h-4" />
                   </div>
                   <div className="min-w-0">
-                    <p className="font-semibold text-white">Preferences & Models</p>
-                    <p className="text-[10px] text-gray-400">AI provider, voice & telemetry</p>
+                    <p className="font-semibold text-white">Preferences &amp; Models</p>
+                    <p className="text-[10px] text-gray-400">AI provider, voice &amp; telemetry</p>
                   </div>
                 </button>
 
@@ -331,9 +354,9 @@ export const Header: React.FC = () => {
                 <button
                   type="button"
                   role="menuitem"
-                  onClick={() => {
+                  onClick={async () => {
                     setIsUserMenuOpen(false);
-                    signOut();
+                    await signOut();
                   }}
                   className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-left text-xs font-medium text-red-400 hover:text-red-300 hover:bg-red-500/10 transition cursor-pointer"
                 >

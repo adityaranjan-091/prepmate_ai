@@ -7,57 +7,23 @@ const PROFILE_STORAGE_KEY = 'prepmate_user_profile_v1';
 export type SyncStatus = 'synced' | 'local_only' | 'syncing' | 'error';
 
 export const DEFAULT_USER_PROFILE: UserProfile = {
-  fullName: 'Aditya Ranjan',
-  headline: 'Full-Stack Software Engineer | Distributed Systems & Scalable Microservices',
-  bio: 'Software engineer passionate about building high-throughput backend services, distributed systems, and intuitive user interfaces. Adept at system architecture, low-latency microservices, and modern web application development.',
-  location: 'Bangalore, India',
-  targetRole: 'Senior Software Engineer',
-  targetCompany: 'Google, Uber, Stripe',
-  targetLevel: 'senior',
-  githubUrl: 'https://github.com',
-  linkedinUrl: 'https://linkedin.com',
-  portfolioUrl: 'https://portfolio.dev',
-  education: [
-    {
-      id: 'edu-1',
-      institution: 'Indian Institute of Technology (IIT)',
-      degree: 'Bachelor of Technology (B.Tech)',
-      fieldOfStudy: 'Computer Science and Engineering',
-      startYear: '2020',
-      endYear: '2024',
-      grade: 'CGPA 9.1 / 10.0',
-      description: 'Coursework in Operating Systems, Database Management Systems, Computer Networks, Distributed Systems, and Advanced Algorithms.',
-    },
-  ],
-  experience: [
-    {
-      id: 'exp-1',
-      company: 'High-Growth Tech Labs',
-      role: 'Software Engineer',
-      location: 'Bangalore, India',
-      startDate: 'Jul 2024',
-      endDate: 'Present',
-      isCurrent: true,
-      description: 'Architected and deployed resilient event-driven microservices processing 15M+ daily requests. Reduced p99 API latency by 35% through Redis caching and query indexing.',
-      technologies: ['TypeScript', 'Node.js', 'PostgreSQL', 'Redis', 'Docker', 'Kubernetes'],
-    },
-    {
-      id: 'exp-2',
-      company: 'Fintech Solutions Inc.',
-      role: 'Software Engineering Intern',
-      location: 'Remote',
-      startDate: 'Jan 2024',
-      endDate: 'Jun 2024',
-      isCurrent: false,
-      description: 'Designed real-time transaction reconciliation pipeline with Apache Kafka and PostgreSQL. Built interactive dashboards using React and Tailwind CSS.',
-      technologies: ['React', 'TypeScript', 'Kafka', 'PostgreSQL', 'Tailwind CSS'],
-    },
-  ],
+  fullName: '',
+  headline: '',
+  bio: '',
+  location: '',
+  targetRole: '',
+  targetCompany: '',
+  targetLevel: 'entry',
+  githubUrl: '',
+  linkedinUrl: '',
+  portfolioUrl: '',
+  education: [],
+  experience: [],
   skills: {
-    languages: ['TypeScript', 'JavaScript', 'Python', 'Go', 'Java', 'SQL', 'C++'],
-    frameworks: ['React', 'Node.js', 'Next.js', 'Express', 'FastAPI', 'Tailwind CSS'],
-    coreCS: ['Distributed Systems', 'System Design & Arch', 'DBMS & Indexing', 'Operating Systems', 'Data Structures & Algorithms'],
-    databasesAndTools: ['PostgreSQL', 'Redis', 'Docker', 'Kubernetes', 'Apache Kafka', 'Git', 'AWS', 'Linux'],
+    languages: [],
+    frameworks: [],
+    coreCS: [],
+    databasesAndTools: [],
   },
   updatedAt: Date.now(),
 };
@@ -105,6 +71,24 @@ const loadProfile = (): UserProfile => {
   } catch {
     return DEFAULT_USER_PROFILE;
   }
+};
+
+// Blank profile template used for new user accounts (not seeded with any personal data)
+export const BLANK_USER_PROFILE: UserProfile = {
+  fullName: '',
+  headline: '',
+  bio: '',
+  location: '',
+  targetRole: '',
+  targetCompany: '',
+  targetLevel: 'entry',
+  githubUrl: '',
+  linkedinUrl: '',
+  portfolioUrl: '',
+  education: [],
+  experience: [],
+  skills: { languages: [], frameworks: [], coreCS: [], databasesAndTools: [] },
+  updatedAt: Date.now(),
 };
 
 const saveProfileToLocalStorage = (profile: UserProfile) => {
@@ -157,6 +141,7 @@ export const useProfileStore = create<ProfileState>((set, get) => {
         const res = await profileDbService.getProfile(userId);
 
         if (res.success && res.data) {
+          // Firestore has existing profile — use it
           saveProfileToLocalStorage(res.data);
           set({
             profile: res.data,
@@ -166,9 +151,14 @@ export const useProfileStore = create<ProfileState>((set, get) => {
             syncError: null,
           });
         } else if (res.success && !res.data) {
-          // Document does not exist yet in Firestore: push local profile to initialize remote
-          const localProfile = get().profile;
-          const saveRes = await profileDbService.saveProfile(userId, localProfile);
+          // New user — push a blank profile to Firestore (never seed personal demo data)
+          const blankProfile: UserProfile = {
+            ...BLANK_USER_PROFILE,
+            updatedAt: Date.now(),
+          };
+          saveProfileToLocalStorage(blankProfile);
+          set({ profile: blankProfile });
+          const saveRes = await profileDbService.saveProfile(userId, blankProfile);
           set({
             isLoading: false,
             syncStatus: saveRes.success ? 'synced' : (saveRes.isFirestoreUnavailable ? 'local_only' : 'error'),
@@ -182,11 +172,11 @@ export const useProfileStore = create<ProfileState>((set, get) => {
             syncError: res.error || null,
           });
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         set({
           isLoading: false,
           syncStatus: 'error',
-          syncError: err?.message || 'Failed to initialize profile.',
+          syncError: (err as Error)?.message || 'Failed to initialize profile.',
         });
       }
     },

@@ -16,6 +16,7 @@ import {
   GraduationCap,
 } from 'lucide-react';
 import { useInterviewStore } from '../../store/interviewStore';
+import { useMCQStore } from '../../store/mcqStore';
 import { InterviewMode } from '../../types/interview';
 
 interface ModeCardConfig {
@@ -82,6 +83,7 @@ const formatSessionDate = (timestamp: string | number | Date): string => {
 export const DashboardView: React.FC = () => {
   const store = useInterviewStore();
   const { setActiveTab, sessionHistory = [], loadSession } = store;
+  const { getTotalAttempted, getTotalCorrect, getAccuracyPercent } = useMCQStore();
 
   // Safely support pre-selecting the mode if updateConfig / setConfig exists on the store
   const handleSelectMode = (mode?: InterviewMode) => {
@@ -95,28 +97,42 @@ export const DashboardView: React.FC = () => {
     setActiveTab('setup');
   };
 
+  const mcqAttempted = getTotalAttempted();
+  const mcqAccuracy = getAccuracyPercent();
+
   const { totalSessions, avgScore, codingScore, deliveryScore } = useMemo(() => {
     const count = sessionHistory.length;
     if (count === 0) {
       return {
         totalSessions: 0,
-        avgScore: 82,
-        codingScore: 84,
-        deliveryScore: 79,
+        avgScore: 0,
+        codingScore: 0,
+        deliveryScore: 0,
       };
     }
 
     const totalOverall = sessionHistory.reduce(
-      (acc, s) => acc + (s.scorecard?.overallScore ?? 75),
+      (acc, s) => acc + (s.scorecard?.overallScore ?? 0),
       0
     );
     const computedAvg = Math.round(totalOverall / count);
 
+    // Calculate subcategory averages if present
+    const codingSessions = sessionHistory.filter((s) => s.config?.mode === 'coding');
+    const computedCoding = codingSessions.length > 0
+      ? Math.round(codingSessions.reduce((acc, s) => acc + (s.scorecard?.overallScore ?? 0), 0) / codingSessions.length)
+      : computedAvg;
+
+    const deliverySessions = sessionHistory.filter((s) => s.config?.mode === 'behavioral' || s.config?.mode === 'full_mock');
+    const computedDelivery = deliverySessions.length > 0
+      ? Math.round(deliverySessions.reduce((acc, s) => acc + (s.scorecard?.overallScore ?? 0), 0) / deliverySessions.length)
+      : computedAvg;
+
     return {
       totalSessions: count,
       avgScore: Math.min(100, Math.max(0, computedAvg)),
-      codingScore: Math.min(100, Math.max(0, computedAvg + 2)),
-      deliveryScore: Math.min(100, Math.max(0, computedAvg - 3)),
+      codingScore: Math.min(100, Math.max(0, computedCoding)),
+      deliveryScore: Math.min(100, Math.max(0, computedDelivery)),
     };
   }, [sessionHistory]);
 
@@ -173,7 +189,7 @@ export const DashboardView: React.FC = () => {
           <div className="flex items-baseline gap-2">
             <span className="text-3xl font-bold text-white">{avgScore}%</span>
             <span className="text-xs text-emerald-400 font-medium">
-              {totalSessions > 0 ? '+5% this week' : 'Baseline Est.'}
+              {totalSessions > 0 ? `${totalSessions} mocks evaluated` : 'No sessions yet'}
             </span>
           </div>
           <div className="w-full bg-gray-800 h-1.5 rounded-full overflow-hidden">
@@ -193,7 +209,7 @@ export const DashboardView: React.FC = () => {
             <span className="text-3xl font-bold text-white">{totalSessions}</span>
             <span className="text-xs text-gray-400">sessions recorded</span>
           </div>
-          <p className="text-[11px] text-gray-500">Target: 3 sessions / week</p>
+          <p className="text-[11px] text-gray-500">Cloud synced to your account</p>
         </div>
 
         <div className="p-5 rounded-2xl bg-gray-900/80 border border-gray-800 space-y-2">
@@ -203,7 +219,9 @@ export const DashboardView: React.FC = () => {
           </div>
           <div className="flex items-baseline gap-2">
             <span className="text-3xl font-bold text-white">{codingScore}%</span>
-            <span className="text-xs text-indigo-400 font-medium">Optimal Big-O</span>
+            <span className="text-xs text-indigo-400 font-medium">
+              {codingScore > 0 ? 'Evaluated' : 'Pending mock'}
+            </span>
           </div>
           <div className="w-full bg-gray-800 h-1.5 rounded-full overflow-hidden">
             <div
@@ -215,17 +233,19 @@ export const DashboardView: React.FC = () => {
 
         <div className="p-5 rounded-2xl bg-gray-900/80 border border-gray-800 space-y-2">
           <div className="flex items-center justify-between text-gray-400 text-xs">
-            <span>Eye Contact & Delivery</span>
-            <ShieldCheck className="w-4 h-4 text-purple-400" />
+            <span>OA & Core CS Accuracy</span>
+            <GraduationCap className="w-4 h-4 text-purple-400" />
           </div>
           <div className="flex items-baseline gap-2">
-            <span className="text-3xl font-bold text-white">{deliveryScore}%</span>
-            <span className="text-xs text-purple-400 font-medium">High Confidence</span>
+            <span className="text-3xl font-bold text-white">{mcqAccuracy}%</span>
+            <span className="text-xs text-purple-400 font-medium">
+              {mcqAttempted > 0 ? `${mcqAttempted} answered` : 'No attempts yet'}
+            </span>
           </div>
           <div className="w-full bg-gray-800 h-1.5 rounded-full overflow-hidden">
             <div
               className="bg-purple-500 h-full rounded-full transition-all duration-500"
-              style={{ width: `${deliveryScore}%` }}
+              style={{ width: `${mcqAccuracy}%` }}
             />
           </div>
         </div>
