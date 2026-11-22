@@ -101,7 +101,7 @@ const loadSavedSettings = (): AppSettings => {
       geminiApiKey: parsed.geminiApiKey?.trim() || DEFAULT_SETTINGS.geminiApiKey,
       groqApiKey: parsed.groqApiKey?.trim() || DEFAULT_SETTINGS.groqApiKey,
       ollamaModel:
-        parsed.ollamaModel?.trim() === 'llama3.2'
+        parsed.ollamaModel?.trim() === 'llama3.2' || parsed.ollamaModel?.trim() === 'gemma4:e4b'
           ? DEFAULT_OLLAMA_MODEL
           : parsed.ollamaModel?.trim() || DEFAULT_OLLAMA_MODEL,
     };

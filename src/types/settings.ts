@@ -30,7 +30,7 @@ export interface AppSettings {
   interviewerPersonality: 'friendly' | 'balanced' | 'rigorous_faang' | 'stress_test';
 }
 
-export const DEFAULT_OLLAMA_MODEL = 'gemma4:e4b';
+export const DEFAULT_OLLAMA_MODEL = 'gemma3:4b';
 
 export const DEFAULT_SETTINGS: AppSettings = {
   activeProvider: 'ollama',
