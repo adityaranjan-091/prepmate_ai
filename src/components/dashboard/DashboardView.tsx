@@ -25,6 +25,7 @@ interface ModeCardConfig {
   description: string;
   icon: LucideIcon;
   color: string;
+  iconColor: string;
   tag: string;
 }
 
@@ -35,7 +36,8 @@ const MODE_CARDS: ModeCardConfig[] = [
     description:
       'Algorithm problem solving with live Monaco code editor, test runner, and Socratic AI hints.',
     icon: Code,
-    color: 'from-blue-600/20 to-cyan-600/10 border-blue-500/30 text-blue-400',
+    color: 'from-blue-600/20 to-cyan-600/10 border-blue-500/30',
+    iconColor: 'text-blue-400',
     tag: 'Algorithms & Data Structures',
   },
   {
@@ -44,7 +46,8 @@ const MODE_CARDS: ModeCardConfig[] = [
     description:
       'STAR framework analysis, filler word tracking, leadership principles, and confidence scoring.',
     icon: Users,
-    color: 'from-purple-600/20 to-pink-600/10 border-purple-500/30 text-purple-400',
+    color: 'from-purple-600/20 to-pink-600/10 border-purple-500/30',
+    iconColor: 'text-purple-400',
     tag: 'STAR & Communication',
   },
   {
@@ -53,7 +56,8 @@ const MODE_CARDS: ModeCardConfig[] = [
     description:
       'Distributed systems, back-of-envelope calculations, microservices, and database scaling.',
     icon: Layers,
-    color: 'from-emerald-600/20 to-teal-600/10 border-emerald-500/30 text-emerald-400',
+    color: 'from-emerald-600/20 to-teal-600/10 border-emerald-500/30',
+    iconColor: 'text-emerald-400',
     tag: 'High Scale Architecture',
   },
   {
@@ -62,7 +66,8 @@ const MODE_CARDS: ModeCardConfig[] = [
     description:
       'Realistic end-to-end multi-stage interview tailored specifically to your target company and resume.',
     icon: Award,
-    color: 'from-amber-600/20 to-orange-600/10 border-amber-500/30 text-amber-400',
+    color: 'from-amber-600/20 to-orange-600/10 border-amber-500/30',
+    iconColor: 'text-amber-400',
     tag: 'Company Specific',
   },
 ];
@@ -80,80 +85,124 @@ const formatSessionDate = (timestamp: string | number | Date): string => {
   });
 };
 
-export const DashboardView: React.FC = () => {
-  const store = useInterviewStore();
-  const { setActiveTab, sessionHistory = [], loadSession } = store;
-  const { getTotalAttempted, getTotalCorrect, getAccuracyPercent } = useMCQStore();
+const getScoreBadgeClass = (score: number): string => {
+  if (score >= 75) return 'text-emerald-400';
+  if (score >= 50) return 'text-amber-400';
+  return 'text-rose-400';
+};
 
-  // Safely support pre-selecting the mode if updateConfig / setConfig exists on the store
+const clampPercent = (value: number): number =>
+  Math.min(100, Math.max(0, Math.round(value)));
+
+export const DashboardView: React.FC = () => {
+  const setActiveTab = useInterviewStore((state) => state.setActiveTab);
+  const sessionHistory = useInterviewStore((state) => state.sessionHistory ?? []);
+  const loadSession = useInterviewStore((state) => state.loadSession);
+
+  // Subscribe to MCQ state changes while computing totals via store getters
+  const { mcqAttempted, mcqAccuracy } = useMCQStore((state) => ({
+    mcqAttempted: state.getTotalAttempted(),
+    mcqAccuracy: clampPercent(state.getAccuracyPercent()),
+  }));
+
   const handleSelectMode = (mode?: InterviewMode) => {
     if (mode) {
-      if ('updateConfig' in store && typeof store.updateConfig === 'function') {
-        store.updateConfig({ mode });
-      } else if ('setConfig' in store && typeof store.setConfig === 'function') {
-        store.setConfig({ mode });
+      const currentStore = useInterviewStore.getState();
+      if (
+        'updateConfig' in currentStore &&
+        typeof currentStore.updateConfig === 'function'
+      ) {
+        currentStore.updateConfig({ mode });
+      } else if (
+        'setConfig' in currentStore &&
+        typeof currentStore.setConfig === 'function'
+      ) {
+        currentStore.setConfig({ mode });
       }
     }
     setActiveTab('setup');
   };
 
-  const mcqAttempted = getTotalAttempted();
-  const mcqAccuracy = getAccuracyPercent();
-
-  const { totalSessions, avgScore, codingScore, deliveryScore } = useMemo(() => {
+  const {
+    totalSessions,
+    avgScore,
+    codingScore,
+    codingSessionsCount,
+    deliveryScore,
+    recentSessions,
+  } = useMemo(() => {
     const count = sessionHistory.length;
     if (count === 0) {
       return {
         totalSessions: 0,
         avgScore: 0,
         codingScore: 0,
+        codingSessionsCount: 0,
         deliveryScore: 0,
+        recentSessions: [],
       };
     }
 
     const totalOverall = sessionHistory.reduce(
-      (acc, s) => acc + (s.scorecard?.overallScore ?? 0),
+      (acc, session) => acc + (session.scorecard?.overallScore ?? 0),
       0
     );
-    const computedAvg = Math.round(totalOverall / count);
+    const computedAvg = clampPercent(totalOverall / count);
 
-    // Calculate subcategory averages if present
-    const codingSessions = sessionHistory.filter((s) => s.config?.mode === 'coding');
+    const codingSessions = sessionHistory.filter(
+      (session) => session.config?.mode === 'coding'
+    );
     const computedCoding =
       codingSessions.length > 0
-        ? Math.round(
-          codingSessions.reduce((acc, s) => acc + (s.scorecard?.overallScore ?? 0), 0) /
-          codingSessions.length
-        )
-        : computedAvg;
+        ? clampPercent(
+            codingSessions.reduce(
+              (acc, session) => acc + (session.scorecard?.overallScore ?? 0),
+              0
+            ) / codingSessions.length
+          )
+        : 0;
 
     const deliverySessions = sessionHistory.filter(
-      (s) => s.config?.mode === 'behavioral' || s.config?.mode === 'full_mock'
+      (session) =>
+        session.config?.mode === 'behavioral' ||
+        session.config?.mode === 'full_mock'
     );
     const computedDelivery =
       deliverySessions.length > 0
-        ? Math.round(
-          deliverySessions.reduce((acc, s) => acc + (s.scorecard?.overallScore ?? 0), 0) /
-          deliverySessions.length
-        )
-        : computedAvg;
+        ? clampPercent(
+            deliverySessions.reduce(
+              (acc, session) => acc + (session.scorecard?.overallScore ?? 0),
+              0
+            ) / deliverySessions.length
+          )
+        : 0;
+
+    const sortedRecent = [...sessionHistory]
+      .sort((a, b) => {
+        const timeA = new Date(a.startTime).getTime();
+        const timeB = new Date(b.startTime).getTime();
+        return (Number.isNaN(timeB) ? 0 : timeB) - (Number.isNaN(timeA) ? 0 : timeA);
+      })
+      .slice(0, 5);
 
     return {
       totalSessions: count,
-      avgScore: Math.min(100, Math.max(0, computedAvg)),
-      codingScore: Math.min(100, Math.max(0, computedCoding)),
-      deliveryScore: Math.min(100, Math.max(0, computedDelivery)),
+      avgScore: computedAvg,
+      codingScore: computedCoding,
+      codingSessionsCount: codingSessions.length,
+      deliveryScore: computedDelivery,
+      recentSessions: sortedRecent,
     };
   }, [sessionHistory]);
 
   return (
-    <div className="flex-1 overflow-y-auto px-6 py-7 lg:px-10 lg:py-8 select-none">
+    <div className="flex-1 overflow-y-auto px-6 py-7 lg:px-10 lg:py-8">
       <div className="max-w-7xl mx-auto space-y-7">
         {/* Hero Welcome & Quick Action */}
         <section className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-900/40 via-indigo-900/30 to-purple-900/20 border border-blue-500/20 p-6 lg:p-8">
           <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-8">
             <div className="max-w-2xl space-y-3.5">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-xs text-blue-400 font-medium">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-xs text-blue-400 font-medium select-none">
                 <BrainCircuit className="w-3.5 h-3.5" />
                 <span>AI Interview Readiness Platform</span>
               </div>
@@ -168,7 +217,7 @@ export const DashboardView: React.FC = () => {
                 critiques.
               </p>
 
-              <div className="pt-1.5 flex flex-wrap items-center gap-3">
+              <div className="pt-1.5 flex flex-wrap items-center gap-3 select-none">
                 <button
                   type="button"
                   onClick={() => handleSelectMode()}
@@ -184,7 +233,7 @@ export const DashboardView: React.FC = () => {
                   className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gray-800/80 hover:bg-gray-700/80 hover:border-cyan-500/40 border border-gray-700 active:scale-[0.99] text-gray-200 hover:text-white font-medium text-sm transition cursor-pointer focus:outline-none focus:ring-2 focus:ring-cyan-400/60"
                 >
                   <GraduationCap className="w-4 h-4 text-cyan-400" />
-                  <span>Practice Core CS & OA</span>
+                  <span>Practice Core CS &amp; OA</span>
                 </button>
               </div>
             </div>
@@ -197,15 +246,15 @@ export const DashboardView: React.FC = () => {
               </div>
               <div className="space-y-2.5 text-xs">
                 <div className="flex items-center justify-between py-1 border-b border-gray-800/80">
-                  <span className="text-gray-400">Communication & STAR</span>
+                  <span className="text-gray-400">Communication &amp; STAR</span>
                   <span className="font-semibold text-purple-300 tabular-nums">
                     {deliveryScore > 0 ? `${deliveryScore}% Avg` : 'Ready'}
                   </span>
                 </div>
                 <div className="flex items-center justify-between py-1 border-b border-gray-800/80">
-                  <span className="text-gray-400">Code & Complexity</span>
+                  <span className="text-gray-400">Code &amp; Complexity</span>
                   <span className="font-semibold text-blue-300 tabular-nums">
-                    {codingScore > 0 ? `${codingScore}% Avg` : 'Live Sandbox'}
+                    {codingSessionsCount > 0 ? `${codingScore}% Avg` : 'Live Sandbox'}
                   </span>
                 </div>
                 <div className="flex items-center justify-between pt-0.5">
@@ -223,7 +272,10 @@ export const DashboardView: React.FC = () => {
         </section>
 
         {/* Metrics Row */}
-        <section aria-label="Performance metrics" className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+        <section
+          aria-label="Performance metrics"
+          className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4"
+        >
           <div className="p-5 rounded-2xl bg-gray-900/80 border border-gray-800 flex flex-col justify-between gap-3">
             <div className="flex items-center justify-between">
               <span className="text-xs font-medium text-gray-400">Interview Readiness</span>
@@ -240,7 +292,14 @@ export const DashboardView: React.FC = () => {
                   {totalSessions > 0 ? `${totalSessions} mocks evaluated` : 'No sessions yet'}
                 </span>
               </div>
-              <div className="w-full bg-gray-800 h-1.5 rounded-full overflow-hidden">
+              <div
+                role="progressbar"
+                aria-label="Interview readiness score"
+                aria-valuenow={avgScore}
+                aria-valuemin={0}
+                aria-valuemax={100}
+                className="w-full bg-gray-800 h-1.5 rounded-full overflow-hidden"
+              >
                 <div
                   className="bg-emerald-500 h-full rounded-full transition-all duration-500"
                   style={{ width: `${avgScore}%` }}
@@ -280,10 +339,17 @@ export const DashboardView: React.FC = () => {
                   {codingScore}%
                 </span>
                 <span className="text-[11px] text-indigo-400 font-medium">
-                  {codingScore > 0 ? 'Evaluated' : 'Pending mock'}
+                  {codingSessionsCount > 0 ? `${codingSessionsCount} evaluated` : 'Pending mock'}
                 </span>
               </div>
-              <div className="w-full bg-gray-800 h-1.5 rounded-full overflow-hidden">
+              <div
+                role="progressbar"
+                aria-label="Coding proficiency score"
+                aria-valuenow={codingScore}
+                aria-valuemin={0}
+                aria-valuemax={100}
+                className="w-full bg-gray-800 h-1.5 rounded-full overflow-hidden"
+              >
                 <div
                   className="bg-indigo-500 h-full rounded-full transition-all duration-500"
                   style={{ width: `${codingScore}%` }}
@@ -294,7 +360,7 @@ export const DashboardView: React.FC = () => {
 
           <div className="p-5 rounded-2xl bg-gray-900/80 border border-gray-800 flex flex-col justify-between gap-3">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-gray-400">OA & Core CS Accuracy</span>
+              <span className="text-xs font-medium text-gray-400">OA &amp; Core CS Accuracy</span>
               <span className="w-8 h-8 rounded-lg bg-purple-500/10 border border-purple-500/20 flex items-center justify-center">
                 <GraduationCap className="w-4 h-4 text-purple-400" />
               </span>
@@ -308,7 +374,14 @@ export const DashboardView: React.FC = () => {
                   {mcqAttempted > 0 ? `${mcqAttempted} answered` : 'No attempts yet'}
                 </span>
               </div>
-              <div className="w-full bg-gray-800 h-1.5 rounded-full overflow-hidden">
+              <div
+                role="progressbar"
+                aria-label="OA and Core CS accuracy"
+                aria-valuenow={mcqAccuracy}
+                aria-valuemin={0}
+                aria-valuemax={100}
+                className="w-full bg-gray-800 h-1.5 rounded-full overflow-hidden"
+              >
                 <div
                   className="bg-purple-500 h-full rounded-full transition-all duration-500"
                   style={{ width: `${mcqAccuracy}%` }}
@@ -341,7 +414,7 @@ export const DashboardView: React.FC = () => {
                     key={card.mode}
                     type="button"
                     onClick={() => handleSelectMode(card.mode)}
-                    className={`group text-left p-5 rounded-2xl bg-gradient-to-br ${card.color} bg-gray-900/90 border transition-all duration-200 hover:-translate-y-0.5 hover:border-blue-500/50 hover:shadow-lg hover:shadow-black/30 cursor-pointer flex flex-col justify-between min-h-[196px] focus:outline-none focus:ring-2 focus:ring-blue-500/40`}
+                    className={`group text-left p-5 rounded-2xl bg-gradient-to-br ${card.color} bg-gray-900/90 border transition-all duration-200 hover:-translate-y-0.5 hover:border-blue-500/50 hover:shadow-lg hover:shadow-black/30 cursor-pointer flex flex-col justify-between min-h-[196px] focus:outline-none focus:ring-2 focus:ring-blue-500/40 select-none`}
                   >
                     <div className="space-y-3 w-full">
                       <div className="flex items-center justify-between gap-2">
@@ -349,7 +422,9 @@ export const DashboardView: React.FC = () => {
                           {card.tag}
                         </span>
                         <span className="w-8 h-8 rounded-lg bg-gray-900/80 border border-gray-800 flex items-center justify-center shrink-0">
-                          <Icon className="w-4 h-4 text-gray-300 group-hover:text-white transition" />
+                          <Icon
+                            className={`w-4 h-4 ${card.iconColor} group-hover:scale-110 transition-transform`}
+                          />
                         </span>
                       </div>
                       <div className="space-y-1">
@@ -388,50 +463,57 @@ export const DashboardView: React.FC = () => {
               )}
             </div>
 
-            {sessionHistory.length > 0 ? (
+            {recentSessions.length > 0 ? (
               <div className="rounded-2xl border border-gray-800 bg-gray-900/70 divide-y divide-gray-800/90 overflow-hidden">
-                {sessionHistory.slice(0, 5).map((session) => (
-                  <button
-                    key={session.id}
-                    type="button"
-                    onClick={() => loadSession(session.id)}
-                    className="group w-full p-4 flex items-center justify-between gap-3 hover:bg-gray-800/50 transition cursor-pointer text-left focus:outline-none focus:bg-gray-800/60"
-                  >
-                    <div className="flex items-center gap-3.5 min-w-0">
-                      <div className="w-9 h-9 shrink-0 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
-                        <Calendar className="w-4 h-4" />
-                      </div>
-                      <div className="min-w-0">
-                        <h4 className="text-xs font-semibold text-white truncate group-hover:text-blue-300 transition">
-                          {session.config?.targetRole || 'Software Engineer'} @{' '}
-                          {session.config?.targetCompany || 'Top Tech'}
-                        </h4>
-                        <p className="text-[11px] text-gray-400 flex items-center gap-1.5 mt-0.5 truncate">
-                          <span>{formatModeLabel(session.config?.mode || 'coding')}</span>
-                          <span className="text-gray-600">•</span>
-                          <span>{formatSessionDate(session.startTime)}</span>
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-3 shrink-0">
-                      {session.scorecard && (
-                        <div className="text-right">
-                          <span className="text-xs font-bold text-emerald-400 tabular-nums">
-                            {session.scorecard.overallScore}/100
-                          </span>
-                          <p className="text-[10px] text-gray-400 font-medium">
-                            {session.scorecard.recommendation}
+                {recentSessions.map((session) => {
+                  const score = session.scorecard?.overallScore;
+                  return (
+                    <button
+                      key={session.id}
+                      type="button"
+                      onClick={() => loadSession(session.id)}
+                      className="group w-full p-4 flex items-center justify-between gap-3 hover:bg-gray-800/50 transition cursor-pointer text-left focus:outline-none focus:bg-gray-800/60"
+                    >
+                      <div className="flex items-center gap-3.5 min-w-0">
+                        <div className="w-9 h-9 shrink-0 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
+                          <Calendar className="w-4 h-4" />
+                        </div>
+                        <div className="min-w-0">
+                          <h4 className="text-xs font-semibold text-white truncate group-hover:text-blue-300 transition">
+                            {session.config?.targetRole || 'Software Engineer'} @{' '}
+                            {session.config?.targetCompany || 'Top Tech'}
+                          </h4>
+                          <p className="text-[11px] text-gray-400 flex items-center gap-1.5 mt-0.5 truncate">
+                            <span>{formatModeLabel(session.config?.mode || 'coding')}</span>
+                            <span className="text-gray-600">•</span>
+                            <span>{formatSessionDate(session.startTime)}</span>
                           </p>
                         </div>
-                      )}
-                      <ArrowRight className="w-4 h-4 text-gray-500 group-hover:text-gray-300 group-hover:translate-x-0.5 transition-all" />
-                    </div>
-                  </button>
-                ))}
+                      </div>
+
+                      <div className="flex items-center gap-3 shrink-0">
+                        {session.scorecard && typeof score === 'number' && (
+                          <div className="text-right">
+                            <span
+                              className={`text-xs font-bold tabular-nums ${getScoreBadgeClass(
+                                score
+                              )}`}
+                            >
+                              {score}/100
+                            </span>
+                            <p className="text-[10px] text-gray-400 font-medium">
+                              {session.scorecard.recommendation}
+                            </p>
+                          </div>
+                        )}
+                        <ArrowRight className="w-4 h-4 text-gray-500 group-hover:text-gray-300 group-hover:translate-x-0.5 transition-all" />
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
             ) : (
-              <div className="rounded-2xl border border-dashed border-gray-800 bg-gray-900/40 p-8 text-center flex flex-col items-center justify-center min-h-[260px] space-y-3">
+              <div className="rounded-2xl border border-dashed border-gray-800 bg-gray-900/40 p-8 text-center flex flex-col items-center justify-center min-h-[260px] space-y-3.5">
                 <div className="w-11 h-11 rounded-xl bg-gray-800/80 border border-gray-700/60 flex items-center justify-center text-gray-400">
                   <Sparkles className="w-5 h-5" />
                 </div>
@@ -442,6 +524,14 @@ export const DashboardView: React.FC = () => {
                     breakdowns, and progress tracking across sessions.
                   </p>
                 </div>
+                <button
+                  type="button"
+                  onClick={() => handleSelectMode()}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gray-800 hover:bg-gray-700 border border-gray-700 text-xs font-medium text-blue-400 hover:text-blue-300 transition cursor-pointer select-none focus:outline-none focus:ring-2 focus:ring-blue-500/40"
+                >
+                  <span>Start your first mock</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
               </div>
             )}
           </section>

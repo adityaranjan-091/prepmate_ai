@@ -1,5 +1,6 @@
 import { InterviewConfig, ChatMessage, Scorecard, AIProvider } from '../types/interview';
 import { AppSettings, DEFAULT_OLLAMA_MODEL } from '../types/settings';
+import { DSA_PROBLEMS } from '../data/dsaProblems';
 
 export interface StreamCallbacks {
   onChunk: (chunk: string) => void;
@@ -29,15 +30,25 @@ export class AIService {
       stress_test: 'Fast-paced, challenges assumptions, presses candidate on ambiguities, tests composure under pressure.',
     }[this.settings.interviewerPersonality || 'balanced'];
 
+    const selectedProblem =
+      config.mode === 'coding'
+        ? DSA_PROBLEMS.find((problem) => problem.id === config.dsaProblemId)
+        : undefined;
+
     let modeInstructions = '';
     if (config.mode === 'coding') {
       modeInstructions = `
 You are conducting a TECHNICAL CODING INTERVIEW.
-- Problem: Focus on algorithmic problem solving, clean code, time/space complexity analysis (Big-O).
+- ${selectedProblem
+  ? `Selected problem: ${selectedProblem.title}. Problem statement: ${selectedProblem.description}`
+  : 'Choose or discuss an appropriate algorithmic problem based on the candidate level and conversation.'}
+- Focus on algorithmic problem solving, clean code, and time/space complexity analysis (Big-O).
 - Interactive Style: Do NOT give the solution away immediately.
+- Ask at most ONE coding or reasoning question at a time.
+- Adapt the next question from the candidate's last answer and current code. If they complete a step, probe edge cases or optimization; if they struggle, narrow the follow-up; if they provide a strong answer, increase difficulty.
 - If the candidate gets stuck, give a gentle Socratic hint or ask clarifying questions (e.g. "What happens if the array has duplicate elements?", "Can we optimize the inner loop?").
 - Ask them to explain their thought process before and while typing code.
-- At the end, ask them about edge cases, testing strategy, and how they would test their implementation.
+- At the end, ask about edge cases, testing strategy, and implementation trade-offs.
 `;
     } else if (config.mode === 'behavioral') {
       modeInstructions = `
@@ -76,6 +87,9 @@ CRITICAL CONVERSATIONAL GUIDELINES:
 2. Ask ONE focused question or follow-up at a time. Never ask multiple unrelated questions in one breath.
 3. React realistically to what the candidate just said before transitioning.
 4. Keep the pace crisp, engaging, and professional.
+5. Generate every next question dynamically from the transcript, resume context, selected track, and current code. Do not reuse or present a fixed bank of questions.
+6. Never output placeholders such as "[your name]", "[candidate]", or "[insert answer]". If a candidate name is not provided, address them politely without inventing a name.
+7. Do not repeat a question already answered. Ask one natural follow-up that extends the strongest gap or next expected competency.
 `.trim();
   }
 
@@ -227,39 +241,7 @@ Evaluate the candidate and return STRICTLY a valid JSON object matching this sch
       };
     } catch (err) {
       console.error('Failed to parse AI evaluation report JSON:', err);
-      // Return a robust default scorecard
-      return {
-        id: 'eval-' + Date.now(),
-        sessionId: 'session-' + Date.now(),
-        overallScore: 78,
-        recommendation: 'Lean Hire',
-        summary: 'The candidate demonstrated good domain knowledge, structured communication, and solid problem-solving fundamentals. They effectively reasoned through requirements and explained their architectural choices.',
-        categoryScores: {
-          technicalAccuracy: 80,
-          problemSolving: 75,
-          communication: 82,
-          starStructure: 74,
-          confidenceAndPresence: 78,
-        },
-        strengths: [
-          'Articulate communication and active listening',
-          'Good foundational knowledge of system requirements and complexity',
-          'Open to feedback and hints during technical discussion',
-        ],
-        areasForImprovement: [
-          'Add more quantitative metrics to behavioral outcomes (STAR results)',
-          'Proactively discuss edge cases and scale limits before being prompted',
-        ],
-        telemetrySummary: {
-          averageEyeContact: 76,
-          goodPosturePercentage: 82,
-          averageConfidence: 80,
-          fillerWordCount: 6,
-          speakingPaceWpm: 140,
-          totalSpeakingTimeSeconds: 380,
-        },
-        timestamp: Date.now(),
-      };
+      throw new Error('The AI provider returned an invalid evaluation response.');
     }
   }
 

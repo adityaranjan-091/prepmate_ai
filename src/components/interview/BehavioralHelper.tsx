@@ -87,7 +87,7 @@ export const BehavioralHelper: React.FC = () => {
         };
 
   return (
-    <div className="flex-1 flex flex-col h-full bg-gray-950 rounded-2xl border border-gray-800 p-6 lg:p-7 space-y-6 overflow-y-auto scroll-smooth shadow-2xl select-none">
+    <div className="flex-1 flex flex-col h-full bg-gray-950 rounded-2xl border border-gray-800 p-4 lg:p-5 space-y-4 overflow-y-auto scroll-smooth shadow-2xl select-none">
       {/* Header & Progress Bar */}
       <div className="space-y-3.5 pb-4 border-b border-gray-800/80">
         <div className="flex flex-wrap items-start justify-between gap-4">

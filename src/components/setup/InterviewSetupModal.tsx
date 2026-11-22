@@ -121,10 +121,10 @@ export const InterviewSetupModal: React.FC = () => {
     (settings.activeProvider === 'groq' && !aiService.getGroqApiKey());
 
   return (
-    <div className="flex-1 overflow-y-auto px-6 py-8 lg:px-10 lg:py-8 select-none">
-      <div className="max-w-7xl mx-auto space-y-6">
+    <div className="setup-page flex-1 overflow-y-auto px-6 py-5 lg:px-8 lg:py-6 select-none">
+      <div className="mx-auto max-w-[1380px] space-y-5">
         {/* Top Desktop Header + Profile Autofill Strip */}
-        <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-5 pb-6 border-b border-gray-800/80">
+        <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 pb-4 border-b border-gray-800/80">
           <div className="space-y-1">
             <div className="flex items-center gap-2.5">
               <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-blue-500/10 border border-blue-500/20 text-[11px] font-semibold uppercase tracking-wider text-blue-400">
@@ -141,7 +141,7 @@ export const InterviewSetupModal: React.FC = () => {
           </div>
 
           {/* Compact Profile Autofill Card */}
-          <div className="flex items-center justify-between gap-4 px-4 py-3 rounded-2xl bg-gradient-to-r from-blue-950/40 via-indigo-950/30 to-purple-950/20 border border-blue-500/30 shadow-md shrink-0">
+          <div className="flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-xl bg-gradient-to-r from-blue-950/40 via-indigo-950/30 to-purple-950/20 border border-blue-500/30 shadow-sm shrink-0 xl:max-w-[390px]">
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-xl bg-blue-500/15 border border-blue-500/30 flex items-center justify-center text-blue-400 shrink-0">
                 <Sparkles className="w-4 h-4" />
@@ -168,11 +168,11 @@ export const InterviewSetupModal: React.FC = () => {
         </div>
 
         {/* Main Two-Column Desktop Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
           {/* LEFT WORKSPACE: Primary Configuration (8 Cols) */}
-          <div className="lg:col-span-8 space-y-6">
+          <div className="lg:col-span-8 space-y-5">
             {/* Section 01: Format & Track */}
-            <section className="p-6 rounded-2xl bg-gray-900/40 border border-gray-800/80 space-y-6">
+            <section className="p-5 rounded-2xl bg-gray-900/40 border border-gray-800/80 space-y-5">
               {/* Session Format */}
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
@@ -184,7 +184,7 @@ export const InterviewSetupModal: React.FC = () => {
                   </label>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
                   {[
                     { id: 'ai' as const, label: 'AI Interview', desc: 'Practice solo with the AI interviewer' },
                     { id: 'one_to_one' as const, label: 'One-to-One', desc: 'Invite a peer or live interviewer' },
@@ -196,7 +196,7 @@ export const InterviewSetupModal: React.FC = () => {
                         key={type.id}
                         type="button"
                         onClick={() => setMeetingType(type.id)}
-                        className={`text-left p-3.5 rounded-xl border transition-all cursor-pointer flex items-start justify-between gap-2 ${active
+                        className={`text-left p-3 rounded-xl border transition-all cursor-pointer flex items-start justify-between gap-2 ${active
                             ? 'bg-blue-600/15 border-blue-500 shadow-sm shadow-blue-500/10'
                             : 'bg-gray-900/70 border-gray-800 hover:border-gray-700'
                           }`}
@@ -257,7 +257,7 @@ export const InterviewSetupModal: React.FC = () => {
                   </label>
                 </div>
 
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5">
                   {tracks.map((track) => {
                     const Icon = track.icon;
                     const isSelected = mode === track.id;
@@ -265,7 +265,7 @@ export const InterviewSetupModal: React.FC = () => {
                       <div
                         key={track.id}
                         onClick={() => setMode(track.id as InterviewMode)}
-                        className={`p-4 rounded-xl border transition-all cursor-pointer flex flex-col justify-between ${isSelected
+                        className={`p-3.5 rounded-xl border transition-all cursor-pointer flex flex-col justify-between ${isSelected
                             ? 'bg-blue-600/15 border-blue-500 shadow-lg shadow-blue-500/10'
                             : 'bg-gray-900/70 border-gray-800 hover:border-gray-700'
                           }`}
@@ -337,7 +337,7 @@ export const InterviewSetupModal: React.FC = () => {
             </section>
 
             {/* Section 03: Target Calibration */}
-            <section className="p-6 rounded-2xl bg-gray-900/40 border border-gray-800/80 space-y-5">
+            <section className="p-5 rounded-2xl bg-gray-900/40 border border-gray-800/80 space-y-4">
               <div className="flex items-center gap-2">
                 <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-gray-800 text-gray-300 border border-gray-700/70">
                   03
@@ -416,7 +416,7 @@ export const InterviewSetupModal: React.FC = () => {
             </section>
 
             {/* Section 04: Resume & Context */}
-            <section className="p-6 rounded-2xl bg-gray-900/40 border border-gray-800/80 space-y-3">
+            <section className="p-5 rounded-2xl bg-gray-900/40 border border-gray-800/80 space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-gray-800 text-gray-300 border border-gray-700/70">
@@ -482,7 +482,7 @@ export const InterviewSetupModal: React.FC = () => {
           </div>
 
           {/* RIGHT SIDEBAR: Hardware Controls, Summary & Launch (4 Cols) */}
-          <aside className="lg:col-span-4 space-y-5 lg:sticky lg:top-8">
+          <aside className="lg:col-span-4 space-y-4 lg:sticky lg:top-5">
             {/* Environment & Devices Card */}
             <div className="p-5 rounded-2xl bg-gray-900/60 border border-gray-800 space-y-3.5">
               <h2 className="text-xs font-semibold uppercase tracking-wider text-gray-400">

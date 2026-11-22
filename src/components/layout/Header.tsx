@@ -107,24 +107,23 @@ export const Header: React.FC = () => {
           className={`group flex items-center gap-3 text-left rounded-xl p-1 -ml-1 transition cursor-pointer min-w-0 ${focusRing}`}
         >
           <div className="relative shrink-0">
-            <div className="absolute inset-0 rounded-xl bg-blue-500/20 blur-md group-hover:bg-blue-500/30 transition-colors" />
             <img
               src="/logo.png"
               alt="Prepmate AI Logo"
-              className="relative w-9 h-9 rounded-xl object-contain shadow-md ring-1 ring-white/10 group-hover:ring-blue-400/30 bg-gray-900/70 p-1 transition"
+              className="relative w-9 h-9 rounded-xl object-contain bg-gray-900/70 p-1 transition"
             />
           </div>
 
           <div className="min-w-0 leading-tight">
             <div className="flex items-center gap-2">
-              <span className="font-bold text-base lg:text-lg tracking-tight bg-gradient-to-r from-white to-gray-300 group-hover:from-white group-hover:to-blue-200 bg-clip-text text-transparent transition">
+              <span className="font-bold text-base lg:text-lg tracking-tight text-gray-100">
                 Prepmate
               </span>
               <span className="text-[10px] font-semibold tracking-wider uppercase px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20">
                 AI
               </span>
             </div>
-            <p className="text-[11px] text-gray-500 truncate">Desktop Interview Studio</p>
+            <p className="text-[11px] text-gray-400 truncate">Interview Preparation Platform</p>
           </div>
         </button>
       </div>

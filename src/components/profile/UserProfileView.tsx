@@ -273,7 +273,7 @@ export const UserProfileView: React.FC = () => {
   const userDisplayName = user?.displayName || profile.fullName || 'Candidate';
 
   return (
-    <div className="flex-1 overflow-y-auto scroll-smooth px-6 py-7 lg:px-10 lg:py-8 select-none">
+    <div className="profile-page flex-1 overflow-y-auto scroll-smooth px-6 py-7 lg:px-10 lg:py-8 select-none">
       <div className="max-w-7xl mx-auto space-y-7 pb-8">
         {/* ───────────── Top Header Card ───────────── */}
         <section className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-gray-900 via-gray-900/95 to-blue-950/40 border border-gray-800 p-6 lg:p-8 shadow-2xl">

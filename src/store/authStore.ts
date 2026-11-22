@@ -4,6 +4,8 @@ import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   GoogleAuthProvider,
   signOut as firebaseSignOut,
   sendPasswordResetEmail,
@@ -27,6 +29,19 @@ interface AuthState {
   sendPasswordReset: (email: string) => Promise<void>;
   clearError: () => void;
 }
+
+const isTauriDesktop = () =>
+  typeof window !== 'undefined' &&
+  Boolean(
+    (window as typeof window & {
+      __TAURI_INTERNALS__?: unknown;
+      __TAURI__?: unknown;
+    }).__TAURI_INTERNALS__ ||
+    (window as typeof window & {
+      __TAURI_INTERNALS__?: unknown;
+      __TAURI__?: unknown;
+    }).__TAURI__
+  );
 
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
@@ -66,6 +81,10 @@ export const useAuthStore = create<AuthState>((set) => ({
     try {
       const provider = new GoogleAuthProvider();
       provider.setCustomParameters({ prompt: 'select_account' });
+      if (isTauriDesktop()) {
+        await signInWithRedirect(auth, provider);
+        return;
+      }
       const res = await signInWithPopup(auth, provider);
       set({ user: res.user, loading: false, error: null });
     } catch (err: unknown) {
@@ -126,6 +145,29 @@ onAuthStateChanged(auth, (user) => {
     useMCQStore.setState({ answers: {}, bookmarks: new Set(), subjectScores: {} as any, currentUserId: null });
   }
 });
+
+// Complete Google redirect sign-in for the desktop Tauri WebView.
+if (isTauriDesktop()) {
+  getRedirectResult(auth)
+    .then((result) => {
+      if (result?.user) {
+        useAuthStore.setState({
+          user: result.user,
+          loading: false,
+          initialized: true,
+          error: null,
+        });
+      }
+    })
+    .catch((err: unknown) => {
+      const codeOrMsg =
+        (err as { code?: string }).code ||
+        (err as Error).message ||
+        'Google sign-in failed.';
+      const msg = mapAuthError(codeOrMsg);
+      useAuthStore.setState({ loading: false, error: msg });
+    });
+}
 
 function mapAuthError(codeOrMsg: string): string {
   if (!codeOrMsg) return 'Authentication failed. Please try again.';

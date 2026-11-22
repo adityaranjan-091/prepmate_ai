@@ -175,7 +175,7 @@ export const useInterviewStore = create<InterviewState>((set, get) => {
 
     finishSession: (scorecard) => {
       const state = get();
-      if (!state.currentSession) return;
+      if (!state.currentSession || state.currentSession.status === 'completed') return;
 
       const completedSession: InterviewSession = {
         ...state.currentSession,
@@ -205,7 +205,15 @@ export const useInterviewStore = create<InterviewState>((set, get) => {
     },
 
     cancelSession: () => {
-      set({ currentSession: null, activeTab: 'dashboard', messages: [] });
+      set({
+        currentSession: null,
+        activeTab: 'dashboard',
+        messages: [],
+        isListening: false,
+        isSpeaking: false,
+        isAIStreaming: false,
+        postureAlertActive: false,
+      });
     },
 
     messages: [],
