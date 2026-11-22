@@ -52,6 +52,7 @@ interface ProfileState {
   addSkill: (category: keyof SkillCategory, skill: string) => void;
   removeSkill: (category: keyof SkillCategory, skill: string) => void;
   resetToDefaultProfile: () => void;
+  clearProfileForSignOut: () => void;
   getSynthesizedResumeText: () => string;
 }
 
@@ -355,6 +356,19 @@ export const useProfileStore = create<ProfileState>((set, get) => {
       saveProfileToLocalStorage(DEFAULT_USER_PROFILE);
       triggerRemoteSync(DEFAULT_USER_PROFILE);
       set({ profile: DEFAULT_USER_PROFILE });
+    },
+
+    clearProfileForSignOut: () => {
+      saveProfileToLocalStorage(BLANK_USER_PROFILE);
+      set({
+        profile: BLANK_USER_PROFILE,
+        currentUserId: null,
+        isLoading: false,
+        isSaving: false,
+        syncStatus: 'local_only',
+        lastSyncedAt: null,
+        syncError: null,
+      });
     },
 
     getSynthesizedResumeText: () => {

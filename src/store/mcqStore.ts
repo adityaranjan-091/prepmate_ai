@@ -171,6 +171,10 @@ export const useMCQStore = create<MCQState>((set, get) => ({
   // ── Reset ─────────────────────────────────────────────────────────────────
 
   resetProgress: () => {
+    if (saveTimer) {
+      clearTimeout(saveTimer);
+      saveTimer = null;
+    }
     const { currentUserId } = get();
     set({
       answers: {},

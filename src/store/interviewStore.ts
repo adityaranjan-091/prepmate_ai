@@ -116,7 +116,21 @@ export const useInterviewStore = create<InterviewState>((set, get) => {
 
   return {
     activeTab: 'dashboard',
-    setActiveTab: (tab) => set({ activeTab: tab }),
+    setActiveTab: (tab) =>
+      set((state) => {
+        if (
+          tab !== 'report' &&
+          tab !== 'interview' &&
+          state.currentSession?.status === 'completed'
+        ) {
+          return {
+            activeTab: tab,
+            currentSession: null,
+            messages: [],
+          };
+        }
+        return { activeTab: tab };
+      }),
 
     settings: initialSettings,
     updateSettings: (newSettings) => {

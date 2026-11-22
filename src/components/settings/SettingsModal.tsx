@@ -24,6 +24,7 @@ export const SettingsModal: React.FC = () => {
   const [ollamaStatus, setOllamaStatus] = useState<'idle' | 'checking' | 'connected' | 'failed'>('idle');
   const [ollamaMessage, setOllamaMessage] = useState('');
   const [availableOllamaModels, setAvailableOllamaModels] = useState<string[]>([]);
+  const [availableGroqModels, setAvailableGroqModels] = useState<string[]>([]);
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [savedAlert, setSavedAlert] = useState(false);
   const [showKey, setShowKey] = useState<{ [key: string]: boolean }>({});
@@ -34,6 +35,31 @@ export const SettingsModal: React.FC = () => {
   useEffect(() => {
     setVoices(speechService.getVoices());
   }, []);
+
+  useEffect(() => {
+    if (form.activeProvider !== 'groq' || !form.groqApiKey.trim()) {
+      setAvailableGroqModels([]);
+      return;
+    }
+
+    let cancelled = false;
+    aiService.updateSettings(form);
+    aiService.listGroqModels(form.groqApiKey)
+      .then((models) => {
+        if (cancelled) return;
+        setAvailableGroqModels(models);
+        if (models.length > 0 && !models.includes(form.groqModel)) {
+          setForm((current) => ({ ...current, groqModel: models[0] }));
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setAvailableGroqModels([]);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [form.activeProvider, form.groqApiKey, form.groqModel, aiService]);
 
   const handleTestCloudProvider = async (provider: AIProvider) => {
     setTestState((prev) => ({ ...prev, [provider]: { status: 'testing' } }));
@@ -311,6 +337,30 @@ export const SettingsModal: React.FC = () => {
                         {showKey.groq ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>
                     </div>
+                  </div>
+
+                  <div className="space-y-1.5 max-w-lg">
+                    <label className="text-xs font-medium text-gray-300 block">Groq Model</label>
+                    <select
+                      value={
+                        availableGroqModels.includes(form.groqModel)
+                          ? form.groqModel
+                          : availableGroqModels[0] || form.groqModel
+                      }
+                      onChange={(e) => setForm((current) => ({ ...current, groqModel: e.target.value }))}
+                      className="w-full bg-gray-900 border border-gray-800 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-blue-500 cursor-pointer"
+                    >
+                      {availableGroqModels.length > 0 ? (
+                        availableGroqModels.map((model) => (
+                          <option key={model} value={model}>{model}</option>
+                        ))
+                      ) : (
+                        <option value={form.groqModel}>{form.groqModel || 'Discover models by testing the API key'}</option>
+                      )}
+                    </select>
+                    <p className="text-[11px] text-gray-500">
+                      Models are loaded automatically from this Groq API key. Any unavailable model is skipped during use.
+                    </p>
                   </div>
 
                   <div className="flex flex-wrap items-center gap-3 pt-1">

@@ -106,6 +106,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       useInterviewStore.getState().setCurrentUserId(null);
       useInterviewStore.setState({ sessionHistory: [], historyLoading: false, historyError: null });
       useMCQStore.getState().resetProgress();
+      useProfileStore.getState().clearProfileForSignOut();
       set({ user: null, loading: false, error: null });
     } catch (err: unknown) {
       set({ error: (err as Error).message, loading: false });
@@ -143,6 +144,7 @@ onAuthStateChanged(auth, (user) => {
     useInterviewStore.getState().setCurrentUserId(null);
     useInterviewStore.setState({ sessionHistory: [], historyLoading: false, historyError: null });
     useMCQStore.setState({ answers: {}, bookmarks: new Set(), subjectScores: {} as any, currentUserId: null });
+    useProfileStore.getState().clearProfileForSignOut();
   }
 });
 

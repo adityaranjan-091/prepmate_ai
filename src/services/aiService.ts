@@ -293,6 +293,45 @@ Evaluate the candidate and return STRICTLY a valid JSON object matching this sch
     return '';
   }
 
+  public async listGroqModels(apiKey?: string): Promise<string[]> {
+    const key = apiKey?.trim() || this.getGroqApiKey();
+    if (!key) throw new Error('Groq API key is missing.');
+
+    const res = await fetch('https://api.groq.com/openai/v1/models', {
+      headers: { Authorization: `Bearer ${key}` },
+    });
+    if (!res.ok) {
+      throw new Error(`Groq model discovery failed with HTTP ${res.status}.`);
+    }
+
+    const data = await res.json();
+    const models = Array.isArray(data?.data)
+      ? data.data
+          .map((model: { id?: string; active?: boolean }) =>
+            model.active !== false && model.id ? model.id : ''
+          )
+          .filter((id: string) => Boolean(id))
+      : [];
+
+    return Array.from(new Set(models));
+  }
+
+  private async getGroqModelCandidates(apiKey?: string): Promise<string[]> {
+    const configured = this.settings.groqModel?.trim();
+    const candidates: string[] = [];
+
+    if (configured) candidates.push(configured);
+
+    try {
+      const available = await this.listGroqModels(apiKey);
+      available.forEach((model) => candidates.push(model));
+    } catch (err) {
+      console.warn('[AIService] Groq model discovery failed:', err);
+    }
+
+    return Array.from(new Set(candidates)).filter(Boolean);
+  }
+
   // --- Provider Implementations ---
 
   public async generateText(prompt: string): Promise<string> {
@@ -352,25 +391,31 @@ Evaluate the candidate and return STRICTLY a valid JSON object matching this sch
 
     const groqKey = this.getGroqApiKey();
     if (groqKey) {
-      try {
-        const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${groqKey}`,
-          },
-          body: JSON.stringify({
-            model: this.settings.groqModel || 'llama-3.3-70b-versatile',
-            messages: [{ role: 'user', content: prompt }],
-            response_format: { type: 'json_object' },
-          }),
-        });
-        if (res.ok) {
-          const data = await res.json();
-          return data?.choices?.[0]?.message?.content || '{}';
+      const candidates = await this.getGroqModelCandidates(groqKey);
+      for (const model of candidates) {
+        try {
+          const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${groqKey}`,
+            },
+            body: JSON.stringify({
+              model,
+              messages: [{ role: 'user', content: prompt }],
+              response_format: { type: 'json_object' },
+            }),
+          });
+          if (res.ok) {
+            const data = await res.json();
+            const text = data?.choices?.[0]?.message?.content?.trim();
+            if (text) return text;
+          } else {
+            console.warn(`[AIService] Groq model ${model} unavailable: HTTP ${res.status}`);
+          }
+        } catch (err) {
+          console.warn(`[AIService] Groq model ${model} network error:`, err);
         }
-      } catch (err) {
-        console.warn('Groq generateText network error:', err);
       }
     }
 
@@ -673,27 +718,39 @@ Evaluate the candidate and return STRICTLY a valid JSON object matching this sch
     const apiKey = this.getGroqApiKey();
     if (!apiKey) throw new Error('Groq API Key is missing. Please add it in Settings.');
 
-    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model: this.settings.groqModel || 'llama-3.3-70b-versatile',
-        messages: [{ role: 'system', content: systemPrompt }, ...history],
-        stream: true,
-        temperature: 0.7,
-        max_tokens: 350,
-      }),
-    });
+    let lastError = 'No available Groq chat model succeeded.';
+    const candidates = await this.getGroqModelCandidates(apiKey);
 
-    if (!res.ok) {
-      const errText = await res.text();
-      throw new Error(`Groq API Error (${res.status}): ${errText}`);
+    for (const model of candidates) {
+      try {
+        const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${apiKey}`,
+          },
+          body: JSON.stringify({
+            model,
+            messages: [{ role: 'system', content: systemPrompt }, ...history],
+            stream: true,
+            temperature: 0.7,
+            max_tokens: 350,
+          }),
+        });
+
+        if (!res.ok) {
+          lastError = `Groq model ${model} failed with HTTP ${res.status}`;
+          continue;
+        }
+
+        await this.processSSE(res, callbacks);
+        return;
+      } catch (err) {
+        lastError = err instanceof Error ? err.message : `Groq model ${model} failed`;
+      }
     }
 
-    await this.processSSE(res, callbacks);
+    throw new Error(lastError);
   }
 
   private async streamOllama(systemPrompt: string, history: { role: string; content: string }[], callbacks: StreamCallbacks) {
@@ -847,11 +904,12 @@ Evaluate the candidate and return STRICTLY a valid JSON object matching this sch
       const apiKey = this.getGroqApiKey();
       if (!apiKey) return { ok: false, message: 'Groq API key is missing.' };
       try {
-        const res = await fetch('https://api.groq.com/openai/v1/models', {
-          headers: { Authorization: `Bearer ${apiKey}` },
-        });
-        if (!res.ok) return { ok: false, message: `Groq error: HTTP ${res.status}` };
-        return { ok: true, message: 'Connected to Groq successfully!' };
+        const models = await this.listGroqModels(apiKey);
+        if (models.length === 0) return { ok: false, message: 'Groq returned no available models.' };
+        return {
+          ok: true,
+          message: `Connected to Groq successfully! ${models.length} model${models.length === 1 ? '' : 's'} available.`,
+        };
       } catch (err: any) {
         return { ok: false, message: err.message };
       }

@@ -99,11 +99,12 @@ export const DashboardView: React.FC = () => {
   const sessionHistory = useInterviewStore((state) => state.sessionHistory ?? []);
   const loadSession = useInterviewStore((state) => state.loadSession);
 
-  // Subscribe to MCQ state changes while computing totals via store getters
-  const { mcqAttempted, mcqAccuracy } = useMCQStore((state) => ({
-    mcqAttempted: state.getTotalAttempted(),
-    mcqAccuracy: clampPercent(state.getAccuracyPercent()),
-  }));
+  // Subscribe to primitive MCQ snapshots only. Object selectors create a new
+  // snapshot on every render and trigger React's infinite-update guard.
+  const mcqAttempted = useMCQStore((state) => state.getTotalAttempted());
+  const mcqAccuracy = clampPercent(
+    useMCQStore((state) => state.getAccuracyPercent())
+  );
 
   const handleSelectMode = (mode?: InterviewMode) => {
     if (mode) {

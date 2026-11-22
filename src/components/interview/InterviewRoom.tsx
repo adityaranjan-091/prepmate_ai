@@ -61,7 +61,7 @@ export const InterviewRoom: React.FC = () => {
   } = useInterviewStore();
 
   const [typedMessage, setTypedMessage] = useState('');
-  const [activeWorkspaceMode, setActiveWorkspaceMode] = useState<WorkspaceMode>('coding');
+  const [activeWorkspaceMode, setActiveWorkspaceMode] = useState<WorkspaceMode | null>(null);
   const [layoutMode, setLayoutMode] = useState<LayoutMode>('dialogue');
   const [compactVideo, setCompactVideo] = useState(false);
   const [isFinishing, setIsFinishing] = useState(false);
@@ -82,17 +82,6 @@ export const InterviewRoom: React.FC = () => {
       speechService.stopListening();
     };
   }, []);
-
-  // Initialize workspace view according to interview track
-  useEffect(() => {
-    if (currentSession?.config.mode === 'behavioral') {
-      setActiveWorkspaceMode('behavioral');
-    } else if (currentSession?.config.mode === 'system_design') {
-      setActiveWorkspaceMode('system_design');
-    } else {
-      setActiveWorkspaceMode('coding');
-    }
-  }, [currentSession]);
 
   // Scroll transcript to bottom on new messages
   useEffect(() => {
@@ -439,8 +428,13 @@ export const InterviewRoom: React.FC = () => {
                 role="tab"
                 aria-selected={isActive}
                 onClick={() => {
+                  if (activeWorkspaceMode === id && layoutMode !== 'dialogue') {
+                    setActiveWorkspaceMode(null);
+                    setLayoutMode('dialogue');
+                    return;
+                  }
                   setActiveWorkspaceMode(id);
-                  if (layoutMode === 'dialogue') setLayoutMode('split');
+                  setLayoutMode('split');
                 }}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-150 cursor-pointer ${isActive
                     ? 'bg-blue-600 text-white shadow-sm shadow-blue-600/30'
@@ -826,13 +820,28 @@ export const InterviewRoom: React.FC = () => {
 
         {/* ── Section B: Dynamic Engineering Workspace ── */}
         <section
-          className={`flex flex-col min-h-0 transition-all duration-300 ${layoutMode === 'workspace'
+          className={`relative flex flex-col min-h-0 transition-all duration-300 ${layoutMode === 'workspace'
               ? 'col-span-12'
               : layoutMode === 'dialogue'
                 ? 'hidden'
                 : 'col-span-12 lg:col-span-6 xl:col-span-5'
             }`}
         >
+          {activeWorkspaceMode && (
+            <button
+              type="button"
+              onClick={() => {
+                setActiveWorkspaceMode(null);
+                setLayoutMode('dialogue');
+              }}
+              aria-label="Hide helper workspace"
+              title="Hide helper workspace"
+              className="absolute right-3 top-14 z-30 grid place-items-center w-8 h-8 rounded-lg border border-gray-700 bg-gray-900/95 text-gray-300 hover:text-white hover:bg-gray-800 shadow-lg transition cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
+
           {activeWorkspaceMode === 'coding' && (
             <CodingWorkspace
               problemId={currentSession?.config.dsaProblemId || 'two-sum'}

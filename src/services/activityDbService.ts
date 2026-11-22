@@ -26,6 +26,7 @@ import {
   limit,
   serverTimestamp,
   writeBatch,
+  deleteField,
 } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { InterviewSession } from '../types/interview';
@@ -85,6 +86,15 @@ function handleError(err: unknown, context: string): DbResult {
     msg.includes('not-found');
   console.warn(`[ActivityDbService] ${context}:`, msg);
   return { success: false, error: msg, isUnavailable };
+}
+
+function stripSensitiveSettings(settings: Partial<AppSettings>): Partial<AppSettings> {
+  const {
+    geminiApiKey: _geminiApiKey,
+    groqApiKey: _groqApiKey,
+    ...safeSettings
+  } = settings;
+  return safeSettings;
 }
 
 // ─── Service Class ────────────────────────────────────────────────────────────
@@ -253,14 +263,19 @@ class ActivityDbService {
 
   /**
    * Saves the user's app settings to Firestore.
-   * Sensitive keys (API keys) are stored server-side so they persist across devices.
+   * API keys are intentionally not persisted to Firestore. They remain local/device-specific.
    */
   async saveSettings(uid: string, settings: Partial<AppSettings>): Promise<DbResult> {
     if (!uid) return { success: false, error: 'uid is required.' };
     try {
       await setDoc(
         settingsDoc(uid),
-        { ...settings, updatedAt: serverTimestamp() },
+        {
+          ...stripSensitiveSettings(settings),
+          geminiApiKey: deleteField(),
+          groqApiKey: deleteField(),
+          updatedAt: serverTimestamp(),
+        },
         { merge: true },
       );
       return { success: true };
@@ -278,8 +293,8 @@ class ActivityDbService {
       const snap = await getDoc(settingsDoc(uid));
       if (!snap.exists()) return { success: true, data: null };
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { updatedAt, ...rest } = snap.data();
-      return { success: true, data: rest as Partial<AppSettings> };
+      const { updatedAt, geminiApiKey, groqApiKey, ...rest } = snap.data();
+      return { success: true, data: stripSensitiveSettings(rest as Partial<AppSettings>) };
     } catch (err) {
       return handleError(err, 'getSettings') as DbResult<Partial<AppSettings> | null>;
     }

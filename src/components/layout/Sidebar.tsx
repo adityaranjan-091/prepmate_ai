@@ -37,7 +37,7 @@ export const Sidebar: React.FC = () => {
       id: 'interview',
       label: 'Interview Studio',
       icon: Code2,
-      hidden: !currentSession,
+      hidden: !currentSession || (currentSession.status !== 'in_progress' && currentSession.status !== 'paused'),
       group: 'workspace',
     },
     {
@@ -149,7 +149,7 @@ export const Sidebar: React.FC = () => {
       </div>
 
       {/* ───────────── Footer: Current session indicator ───────────── */}
-      {currentSession && (
+      {currentSession && (currentSession.status === 'in_progress' || currentSession.status === 'paused') && (
         <div className="shrink-0 pt-2 border-t border-gray-800/70">
           <div className="rounded-xl border border-gray-800 bg-gray-900/80 p-3.5 shadow-inner shadow-black/25 space-y-2.5">
             <div className="flex items-center justify-between gap-2">

@@ -15,7 +15,7 @@ import {
 import { useInterviewStore } from '../../store/interviewStore';
 
 export const ScorecardView: React.FC = () => {
-  const { currentSession, setActiveTab } = useInterviewStore();
+  const { currentSession, setActiveTab, cancelSession } = useInterviewStore();
 
   const scorecard = currentSession?.scorecard;
 
@@ -26,7 +26,10 @@ export const ScorecardView: React.FC = () => {
         <h2 className="text-lg font-semibold text-white">No Scorecard Available</h2>
         <p className="text-xs text-gray-400">Complete an interview session to view your comprehensive evaluation.</p>
         <button
-          onClick={() => setActiveTab('setup')}
+          onClick={() => {
+            cancelSession();
+            setActiveTab('setup');
+          }}
           className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium transition cursor-pointer"
         >
           Start Interview
@@ -106,7 +109,10 @@ ${scorecard.areasForImprovement.map(a => `- ${a}`).join('\n')}
             <span>Export Report (.md)</span>
           </button>
           <button
-            onClick={() => setActiveTab('setup')}
+            onClick={() => {
+              cancelSession();
+              setActiveTab('setup');
+            }}
             className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium transition shadow-md shadow-blue-600/30 cursor-pointer"
           >
             <RotateCcw className="w-3.5 h-3.5" />
