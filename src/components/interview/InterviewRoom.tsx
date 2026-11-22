@@ -63,7 +63,7 @@ export const InterviewRoom: React.FC = () => {
   const [typedMessage, setTypedMessage] = useState('');
   const [activeWorkspaceMode, setActiveWorkspaceMode] = useState<WorkspaceMode>('coding');
   const [layoutMode, setLayoutMode] = useState<LayoutMode>('split');
-  const [compactVideo, setCompactVideo] = useState(true);
+  const [compactVideo, setCompactVideo] = useState(false);
   const [isFinishing, setIsFinishing] = useState(false);
   const [showFinishConfirm, setShowFinishConfirm] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
@@ -398,7 +398,7 @@ export const InterviewRoom: React.FC = () => {
               ? 'col-span-12'
               : layoutMode === 'workspace'
               ? 'hidden'
-              : 'col-span-12 lg:col-span-5'
+              : 'col-span-12 xl:col-span-3 lg:col-span-4'
           }`}
         >
           {/* Top Video Stage / Compact Dock */}
@@ -409,7 +409,7 @@ export const InterviewRoom: React.FC = () => {
                 compact={compactVideo}
               />
             ) : compactVideo ? (
-              <div className="flex flex-col sm:flex-row gap-2">
+              <div className="grid grid-cols-2 gap-2">
                 <AIInterviewerAvatar
                   isSpeaking={isSpeaking}
                   isListening={isListening}
@@ -630,7 +630,7 @@ export const InterviewRoom: React.FC = () => {
               ? 'col-span-12'
               : layoutMode === 'dialogue'
               ? 'hidden'
-              : 'col-span-12 lg:col-span-7'
+              : 'col-span-12 xl:col-span-9 lg:col-span-8'
           }`}
         >
           {activeWorkspaceMode === 'coding' && (

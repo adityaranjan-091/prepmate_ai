@@ -23,6 +23,7 @@ export const SettingsModal: React.FC = () => {
   const [form, setForm] = useState(settings);
   const [ollamaStatus, setOllamaStatus] = useState<'idle' | 'checking' | 'connected' | 'failed'>('idle');
   const [ollamaMessage, setOllamaMessage] = useState('');
+  const [availableOllamaModels, setAvailableOllamaModels] = useState<string[]>([]);
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [savedAlert, setSavedAlert] = useState(false);
   const [showKey, setShowKey] = useState<{ [key: string]: boolean }>({});
@@ -58,13 +59,19 @@ export const SettingsModal: React.FC = () => {
       const res = await fetch(`${form.ollamaBaseUrl}/api/tags`);
       if (res.ok) {
         const data = (await res.json()) as { models?: Array<{ name?: string }> };
+        const found = (data.models || []).map((m) => m.name || '').filter(Boolean);
+        setAvailableOllamaModels(found);
         const modelName = form.ollamaModel.trim() || DEFAULT_OLLAMA_MODEL;
-        const modelInstalled = data.models?.some((model) => model.name === modelName);
+        const modelInstalled = found.some((name) => {
+          const n = name.toLowerCase();
+          const target = modelName.toLowerCase();
+          return n === target || n === `${target}:latest` || n.replace(':latest', '') === target;
+        });
         setOllamaStatus(modelInstalled ? 'connected' : 'failed');
         setOllamaMessage(
           modelInstalled
             ? `${modelName} is installed and ready.`
-            : `${modelName} was not found. Run "ollama pull ${modelName}" first.`
+            : `${modelName} was not found. Run "ollama pull ${modelName}" in terminal first.`
         );
       } else {
         setOllamaStatus('failed');
@@ -389,6 +396,42 @@ export const SettingsModal: React.FC = () => {
                       placeholder={DEFAULT_OLLAMA_MODEL}
                       className="w-full bg-gray-900 border border-gray-800 rounded-xl px-3 py-2 text-xs text-white font-mono focus:outline-none focus:border-blue-500 transition"
                     />
+                    <div className="flex flex-wrap items-center gap-1.5 pt-2">
+                      <span className="text-[10px] text-gray-500">Presets:</span>
+                      {['gemma3:4b', 'gemma:2b', 'llama3.2', 'deepseek-r1:8b', 'mistral'].map((preset) => (
+                        <button
+                          key={preset}
+                          type="button"
+                          onClick={() => setForm({ ...form, ollamaModel: preset })}
+                          className={`text-[10px] px-2 py-0.5 rounded-md border transition cursor-pointer ${
+                            form.ollamaModel === preset
+                              ? 'bg-purple-600/25 border-purple-500/50 text-purple-300 font-semibold'
+                              : 'bg-gray-900 border-gray-800 text-gray-400 hover:text-white hover:border-gray-700'
+                          }`}
+                        >
+                          {preset}
+                        </button>
+                      ))}
+                    </div>
+                    {availableOllamaModels.length > 0 && (
+                      <div className="flex flex-wrap items-center gap-1.5 pt-1.5">
+                        <span className="text-[10px] text-emerald-400 font-medium">Installed:</span>
+                        {availableOllamaModels.map((installed) => (
+                          <button
+                            key={installed}
+                            type="button"
+                            onClick={() => setForm({ ...form, ollamaModel: installed })}
+                            className={`text-[10px] px-2 py-0.5 rounded-md border font-mono transition cursor-pointer ${
+                              form.ollamaModel === installed
+                                ? 'bg-emerald-600/25 border-emerald-500/50 text-emerald-300 font-semibold'
+                                : 'bg-gray-900 border-gray-800 text-gray-300 hover:text-white hover:border-emerald-500/40'
+                            }`}
+                          >
+                            {installed}
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
 
