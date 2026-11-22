@@ -177,6 +177,3 @@ Compiled binaries and installer packages are generated in:
 
 ---
 
-## License
-
-This project is licensed under the MIT License. See the LICENSE file for details.
