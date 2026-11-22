@@ -205,7 +205,7 @@ Provide a concise, ultra-clear explanation (under 120 words) breaking down:
             </span>
             <div>
               <div className="flex items-center gap-2.5 flex-wrap">
-                <h1 className="text-xl lg:text-2xl font-bold text-white tracking-tight">
+                <h1 className="text-xl lg:text-2xl font-bold text-gray-100 tracking-tight">
                   Core CS &amp; OA Question Bank
                 </h1>
                 <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20 tabular-nums">
@@ -235,7 +235,7 @@ Provide a concise, ultra-clear explanation (under 120 words) breaking down:
                 <p className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">
                   Solved
                 </p>
-                <p className="font-bold text-white font-mono tabular-nums text-sm">
+                <p className="font-bold text-gray-100 font-mono tabular-nums text-sm">
                   {stats.correct}{' '}
                   <span className="text-gray-500 font-normal">/ {stats.attempted}</span>
                 </p>
@@ -252,7 +252,7 @@ Provide a concise, ultra-clear explanation (under 120 words) breaking down:
                 }}
                 className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 cursor-pointer ${mode === 'practice'
                     ? 'bg-blue-600 text-white shadow-sm'
-                    : 'text-gray-400 hover:text-white'
+                    : 'text-gray-400 hover:text-gray-100'
                   }`}
               >
                 Practice Mode
@@ -267,7 +267,7 @@ Provide a concise, ultra-clear explanation (under 120 words) breaking down:
                 }}
                 className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 cursor-pointer ${mode === 'assessment'
                     ? 'bg-purple-600 text-white shadow-sm'
-                    : 'text-gray-400 hover:text-white'
+                    : 'text-gray-400 hover:text-gray-100'
                   }`}
               >
                 <Clock className="w-3.5 h-3.5" />
@@ -279,7 +279,7 @@ Provide a concise, ultra-clear explanation (under 120 words) breaking down:
               type="button"
               onClick={resetAllProgress}
               title="Reset progress"
-              className="p-2.5 rounded-xl bg-gray-800/80 hover:bg-gray-700 text-gray-400 hover:text-white border border-gray-700/80 transition-all duration-200 cursor-pointer"
+              className="p-2.5 rounded-xl bg-gray-800/80 hover:bg-gray-700 text-gray-400 hover:text-gray-100 border border-gray-700/80 transition-all duration-200 cursor-pointer"
             >
               <RotateCcw className="w-4 h-4" />
             </button>
@@ -305,7 +305,7 @@ Provide a concise, ultra-clear explanation (under 120 words) breaking down:
                   onClick={() => setSelectedSubject(tab.id as any)}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium border transition-all duration-200 whitespace-nowrap cursor-pointer ${isActive
                       ? 'bg-blue-600/20 text-blue-300 border-blue-500/40 shadow-sm'
-                      : 'bg-gray-900/70 text-gray-400 border-gray-800 hover:bg-gray-800 hover:text-white'
+                      : 'bg-gray-900/70 text-gray-400 border-gray-800 hover:bg-gray-800 hover:text-gray-100'
                     }`}
                 >
                   <Icon className="w-3.5 h-3.5" />
@@ -325,7 +325,7 @@ Provide a concise, ultra-clear explanation (under 120 words) breaking down:
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search topic or company..."
-                className="pl-8 pr-3 py-1.5 bg-gray-950/80 border border-gray-800 rounded-xl text-xs text-white placeholder-gray-500 focus:outline-none focus:border-blue-500/60 focus:ring-1 focus:ring-blue-500/30 w-full sm:w-52 transition-all duration-200"
+                className="pl-8 pr-3 py-1.5 bg-gray-950/80 border border-gray-800 rounded-xl text-xs text-gray-100 placeholder-gray-500 focus:outline-none focus:border-blue-500/60 focus:ring-1 focus:ring-blue-500/30 w-full sm:w-52 transition-all duration-200"
               />
             </div>
 
@@ -345,7 +345,7 @@ Provide a concise, ultra-clear explanation (under 120 words) breaking down:
               onClick={() => setOnlyBookmarked(!onlyBookmarked)}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-medium transition-all duration-200 cursor-pointer ${onlyBookmarked
                   ? 'bg-amber-500/15 border-amber-500/40 text-amber-300'
-                  : 'bg-gray-950/80 border-gray-800 text-gray-400 hover:text-white'
+                  : 'bg-gray-950/80 border-gray-800 text-gray-400 hover:text-gray-100'
                 }`}
             >
               <Bookmark className="w-3.5 h-3.5" />
@@ -384,7 +384,7 @@ Provide a concise, ultra-clear explanation (under 120 words) breaking down:
             </div>
 
             <div>
-              <h2 className="text-xl font-bold text-white tracking-tight">
+              <h2 className="text-xl font-bold text-gray-100 tracking-tight">
                 Assessment Evaluation Complete
               </h2>
               <p className="text-xs text-gray-400 mt-1">
@@ -515,7 +515,7 @@ Provide a concise, ultra-clear explanation (under 120 words) breaking down:
                         onClick={() => toggleBookmark(currentQ.id)}
                         className={`p-2.5 rounded-xl border transition-all duration-200 cursor-pointer shrink-0 ${bookmarkedIds.has(currentQ.id)
                             ? 'bg-amber-500/20 border-amber-500/40 text-amber-300'
-                            : 'bg-gray-900 border-gray-800 text-gray-500 hover:text-white hover:border-gray-700'
+                            : 'bg-gray-900 border-gray-800 text-gray-500 hover:text-gray-100 hover:border-gray-700'
                           }`}
                         title={bookmarkedIds.has(currentQ.id) ? 'Remove bookmark' : 'Bookmark question'}
                       >
@@ -529,7 +529,7 @@ Provide a concise, ultra-clear explanation (under 120 words) breaking down:
                         <span className="font-mono text-xs font-bold px-2.5 py-1 rounded-lg bg-gray-900 border border-gray-800 text-gray-400 shrink-0 mt-0.5">
                           Q{currentIndex + 1}
                         </span>
-                        <h2 className="text-base lg:text-[17px] font-semibold text-white leading-relaxed select-text">
+                        <h2 className="text-base lg:text-[17px] font-semibold text-gray-100 leading-relaxed select-text">
                           {currentQ.question}
                         </h2>
                       </div>
@@ -563,7 +563,7 @@ Provide a concise, ultra-clear explanation (under 120 words) breaking down:
                             letterClass = 'bg-red-600 text-white border-red-500';
                           }
                         } else if (isSelected) {
-                          optionClass = 'bg-blue-600/15 border-blue-500 text-white';
+                          optionClass = 'bg-blue-600/15 border-blue-500 text-gray-100';
                           letterClass = 'bg-blue-600 text-white border-blue-500';
                         }
 
@@ -666,7 +666,7 @@ Provide a concise, ultra-clear explanation (under 120 words) breaking down:
                     </button>
 
                     <span className="text-xs font-mono text-gray-400 tabular-nums">
-                      Question <strong className="text-white">{currentIndex + 1}</strong> of{' '}
+                      Question <strong className="text-gray-100">{currentIndex + 1}</strong> of{' '}
                       {filteredQuestions.length}
                     </span>
 
@@ -715,7 +715,7 @@ Provide a concise, ultra-clear explanation (under 120 words) breaking down:
                     const isCorrect = activeAnswers[q.id] === q.correctIndex;
 
                     let gridBtnClass =
-                      'bg-gray-900/90 border-gray-800 text-gray-400 hover:text-white hover:border-gray-700';
+                      'bg-gray-900/90 border-gray-800 text-gray-400 hover:text-gray-100 hover:border-gray-700';
                     if (isCurrent) {
                       gridBtnClass = 'bg-blue-600 text-white border-blue-400 font-bold shadow-md';
                     } else if (mode === 'practice' && isAnswered) {

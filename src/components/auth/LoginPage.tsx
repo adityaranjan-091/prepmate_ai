@@ -12,7 +12,6 @@ import {
   Code2,
   Mic,
   Award,
-  Sparkles,
 } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 

@@ -87,32 +87,56 @@ export const BehavioralHelper: React.FC = () => {
         };
 
   return (
-    <div className="flex-1 flex flex-col h-full bg-gray-950 rounded-2xl border border-gray-800 p-6 space-y-6 overflow-y-auto shadow-2xl select-none">
-      {/* Header */}
-      <div className="flex items-start justify-between gap-4">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <Target className="w-5 h-5 text-purple-400 shrink-0" />
-            <h2 className="text-base font-bold text-white">
-              STAR Method Live Response Guide
-            </h2>
+    <div className="flex-1 flex flex-col h-full bg-gray-950 rounded-2xl border border-gray-800 p-6 lg:p-7 space-y-6 overflow-y-auto scroll-smooth shadow-2xl select-none">
+      {/* Header & Progress Bar */}
+      <div className="space-y-3.5 pb-4 border-b border-gray-800/80">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <span className="grid place-items-center w-9 h-9 rounded-xl bg-purple-500/10 border border-purple-500/25 text-purple-400 shrink-0 mt-0.5">
+              <Target className="w-4 h-4" />
+            </span>
+            <div className="space-y-0.5">
+              <h2 className="text-base font-bold text-white tracking-tight">
+                STAR Method Live Response Guide
+              </h2>
+              <p className="text-xs text-gray-400">
+                Click each stage as you cover it to keep your behavioral answer structured and concise.
+              </p>
+            </div>
           </div>
-          <p className="text-xs text-gray-400">
-            Click each stage as you cover it to keep your behavioral answer structured and concise.
-          </p>
+
+          <div className="flex items-center gap-2 shrink-0">
+            <span className="px-2.5 py-1 rounded-lg bg-gray-900 border border-gray-800 text-[11px] font-mono text-gray-400 tabular-nums">
+              <strong className="text-white">{completedCount}</strong>/4 Covered
+            </span>
+
+            {completedCount > 0 && (
+              <button
+                type="button"
+                onClick={resetChecklist}
+                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-gray-900 hover:bg-gray-800 border border-gray-800 text-[11px] font-medium text-gray-300 hover:text-white transition-all duration-150 cursor-pointer"
+                title="Reset STAR progress for next question"
+              >
+                <RotateCcw className="w-3 h-3" />
+                <span>Reset</span>
+              </button>
+            )}
+          </div>
         </div>
 
-        {completedCount > 0 && (
-          <button
-            type="button"
-            onClick={resetChecklist}
-            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-gray-900 hover:bg-gray-800 border border-gray-800 text-[11px] text-gray-400 hover:text-white transition cursor-pointer shrink-0"
-            title="Reset STAR progress for next question"
-          >
-            <RotateCcw className="w-3 h-3" />
-            <span>Reset ({completedCount}/4)</span>
-          </button>
-        )}
+        {/* 4-Segment STAR Completion Indicator */}
+        <div className="grid grid-cols-4 gap-2">
+          {STAR_STEPS.map((step) => {
+            const isDone = !!completedSteps[step.letter];
+            return (
+              <div
+                key={step.letter}
+                className={`h-1.5 rounded-full transition-all duration-300 ${isDone ? 'bg-emerald-500' : 'bg-gray-800'
+                  }`}
+              />
+            );
+          })}
+        </div>
       </div>
 
       {/* STAR Framework Interactive Cards */}
@@ -124,28 +148,32 @@ export const BehavioralHelper: React.FC = () => {
               key={step.letter}
               type="button"
               onClick={() => toggleStep(step.letter)}
-              className={`text-left p-4 rounded-xl border transition-all cursor-pointer space-y-2 focus:outline-none focus:ring-2 focus:ring-purple-500/40 ${isDone ? step.activeColor : step.color
+              className={`group text-left p-5 rounded-2xl border transition-all duration-200 cursor-pointer flex flex-col justify-between gap-3 focus:outline-none focus:ring-2 focus:ring-purple-500/40 ${isDone ? step.activeColor : step.color
                 }`}
             >
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2">
+              <div className="flex items-center justify-between gap-2 w-full">
+                <div className="flex items-center gap-2.5">
                   <span
-                    className={`w-7 h-7 rounded-lg border flex items-center justify-center font-bold text-xs transition ${isDone
+                    className={`w-7 h-7 rounded-lg border flex items-center justify-center font-bold text-xs transition-colors duration-200 ${isDone
                         ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-300'
-                        : 'bg-gray-900 border-gray-700/60 text-white'
+                        : 'bg-gray-900 border-gray-700/70 text-white'
                       }`}
                   >
                     {step.letter}
                   </span>
-                  <h3 className="text-sm font-semibold text-white">{step.title}</h3>
+                  <h3 className="text-sm font-semibold text-white tracking-tight">
+                    {step.title}
+                  </h3>
                 </div>
 
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-medium text-gray-400 bg-gray-900/70 px-2 py-0.5 rounded-md border border-gray-800">
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="text-[10px] font-mono font-medium text-gray-400 bg-gray-900/80 px-2 py-0.5 rounded-md border border-gray-800 tabular-nums">
                     {step.timeHint}
                   </span>
                   <CheckCircle2
-                    className={`w-4 h-4 transition ${isDone ? 'text-emerald-400 scale-110' : 'text-gray-600'
+                    className={`w-4 h-4 transition-all duration-200 ${isDone
+                        ? 'text-emerald-400 scale-110'
+                        : 'text-gray-600 group-hover:text-gray-400'
                       }`}
                   />
                 </div>
@@ -157,51 +185,54 @@ export const BehavioralHelper: React.FC = () => {
         })}
       </div>
 
-      {/* Live Verbal Telemetry & Filler Words Monitor */}
-      <div className="p-4 rounded-xl bg-gray-900 border border-gray-800 flex items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div
-            className={`w-10 h-10 shrink-0 rounded-xl border flex items-center justify-center ${fillerStatus.badgeBg}`}
-          >
-            {detectedFillerWordsCount > 3 ? (
-              <AlertCircle className="w-5 h-5" />
-            ) : (
-              <CheckCircle2 className="w-5 h-5" />
-            )}
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h4 className="text-xs font-semibold text-white">Filler Word Monitor</h4>
-              <span className={`text-[10px] font-medium ${fillerStatus.color}`}>
-                • {fillerStatus.label}
-              </span>
+      {/* Bottom Desktop Row: Live Verbal Telemetry & Ownership Rule */}
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-4 pt-1">
+        {/* Live Verbal Telemetry & Filler Words Monitor */}
+        <div className="xl:col-span-6 p-4.5 rounded-2xl bg-gray-900/90 border border-gray-800 flex items-center justify-between gap-4">
+          <div className="flex items-start gap-3.5 min-w-0">
+            <div
+              className={`w-10 h-10 shrink-0 rounded-xl border flex items-center justify-center mt-0.5 ${fillerStatus.badgeBg}`}
+            >
+              {detectedFillerWordsCount > 3 ? (
+                <AlertCircle className="w-5 h-5" />
+              ) : (
+                <CheckCircle2 className="w-5 h-5" />
+              )}
             </div>
-            <p className="text-[11px] text-gray-400">
-              Tracks verbal crutches like &ldquo;um&rdquo;, &ldquo;uh&rdquo;, &ldquo;like&rdquo;, &ldquo;you know&rdquo;, and &ldquo;basically&rdquo;
-            </p>
+            <div className="space-y-1 min-w-0">
+              <div className="flex flex-wrap items-center gap-1.5">
+                <h4 className="text-xs font-semibold text-white">Filler Word Monitor</h4>
+                <span className={`text-[11px] font-medium ${fillerStatus.color}`}>
+                  • {fillerStatus.label}
+                </span>
+              </div>
+              <p className="text-[11px] text-gray-400 leading-relaxed">
+                Tracks verbal crutches like &ldquo;um&rdquo;, &ldquo;uh&rdquo;, &ldquo;like&rdquo;, &ldquo;you know&rdquo;, and &ldquo;basically&rdquo;
+              </p>
+            </div>
+          </div>
+
+          <div className="text-right shrink-0 pl-3 border-l border-gray-800">
+            <span className={`text-2xl font-bold font-mono tabular-nums ${fillerStatus.color}`}>
+              {detectedFillerWordsCount}
+            </span>
+            <p className="text-[10px] text-gray-500 mt-0.5">detected</p>
           </div>
         </div>
 
-        <div className="text-right shrink-0">
-          <span className={`text-xl font-bold font-mono ${fillerStatus.color}`}>
-            {detectedFillerWordsCount}
-          </span>
-          <p className="text-[10px] text-gray-500">detected so far</p>
+        {/* Golden Rule Banner */}
+        <div className="xl:col-span-6 p-4.5 rounded-2xl bg-gradient-to-r from-blue-950/30 to-purple-950/20 border border-blue-900/40 flex flex-col justify-center space-y-2">
+          <div className="flex items-center gap-2 text-xs font-semibold text-blue-300">
+            <MessageSquareQuote className="w-4 h-4 shrink-0" />
+            <span>The &ldquo;I&rdquo; vs &ldquo;We&rdquo; Ownership Rule</span>
+          </div>
+          <p className="text-xs text-gray-300 leading-relaxed">
+            Avoid stating only &ldquo;We decided&rdquo; or &ldquo;We built it&rdquo;. Clarify your exact personal ownership:{' '}
+            <span className="text-blue-200 italic">
+              &ldquo;I architected the event-driven worker in Rust, while my teammate built the React dashboard.&rdquo;
+            </span>
+          </p>
         </div>
-      </div>
-
-      {/* Golden Rule Banner */}
-      <div className="p-4 rounded-xl bg-gradient-to-r from-blue-950/30 to-purple-950/20 border border-blue-900/40 space-y-2">
-        <div className="flex items-center gap-2 text-xs font-semibold text-blue-300">
-          <MessageSquareQuote className="w-4 h-4 shrink-0" />
-          <span>The &ldquo;I&rdquo; vs &ldquo;We&rdquo; Ownership Rule</span>
-        </div>
-        <p className="text-xs text-gray-300 leading-relaxed">
-          Avoid stating only &ldquo;We decided&rdquo; or &ldquo;We built it&rdquo;. Clarify your exact personal ownership:{' '}
-          <span className="text-blue-200 italic">
-            &ldquo;I architected the event-driven worker in Rust, while my teammate built the React dashboard.&rdquo;
-          </span>
-        </p>
       </div>
     </div>
   );

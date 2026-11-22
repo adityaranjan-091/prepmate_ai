@@ -53,7 +53,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   ttsRate: 1.0,
   ttsPitch: 1.0,
   autoSpeakResponse: true,
-  handsFreeContinuousMode: true,
+  handsFreeContinuousMode: false,
 
   webcamDeviceId: '',
   showTelemetryOverlay: true,

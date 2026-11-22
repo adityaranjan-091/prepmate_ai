@@ -1,7 +1,7 @@
 import React from 'react';
 import { useAuthStore } from '../../store/authStore';
 import { LoginPage } from './LoginPage';
-import { Sparkles, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 
 interface AuthGuardProps {
   children: React.ReactNode;
@@ -15,8 +15,12 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
       <div className="min-h-screen w-screen flex flex-col items-center justify-center bg-gray-950 text-gray-100 select-none">
         <div className="relative mb-6">
           <div className="absolute inset-0 rounded-2xl bg-blue-500/30 blur-xl animate-pulse" />
-          <div className="relative grid place-items-center w-16 h-16 rounded-2xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-purple-600 shadow-2xl shadow-blue-500/30 ring-1 ring-white/20">
-            <Sparkles className="w-8 h-8 text-white" />
+          <div className="relative grid place-items-center w-16 h-16 rounded-2xl bg-gray-900/80 shadow-2xl shadow-blue-500/30 ring-1 ring-white/20 overflow-hidden">
+            <img
+              src="/logo.png"
+              alt="Prepmate project logo"
+              className="w-full h-full object-contain p-1.5"
+            />
           </div>
         </div>
 
